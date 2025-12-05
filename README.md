@@ -341,9 +341,24 @@ Contributions welcome! Please:
 3. Test your changes
 4. Submit a pull request
 
+## Badges
+
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Ansible](https://img.shields.io/badge/ansible-%3E%3D2.14-blue.svg)
+![Python](https://img.shields.io/badge/python-3.13-blue.svg)
+![Proxmox](https://img.shields.io/badge/proxmox-9.0-orange.svg)
+![NetBox](https://img.shields.io/badge/netbox-latest-green.svg)
+![Status](https://img.shields.io/badge/status-production--ready-brightgreen.svg)
+
 ## License
 
-[Specify your license here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+MIT License is chosen for maximum compatibility with:
+- NetBox (Apache 2.0)
+- Ansible (GPL 3.0)
+- PostgreSQL (PostgreSQL License)
+- Nginx (BSD-2-Clause)
 
 ## Support
 

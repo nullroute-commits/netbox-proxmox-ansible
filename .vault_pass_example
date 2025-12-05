@@ -1,0 +1,21 @@
+# Vault Password File Example
+# 
+# This file should contain your Ansible Vault password
+# Copy this file to .vault_pass and add your password
+# 
+# cp .vault_pass_example .vault_pass
+# echo "your-secure-password" > .vault_pass
+# chmod 600 .vault_pass
+#
+# The .vault_pass file is in .gitignore and will not be committed
+#
+# Current vault password: netbox-deployment-2025
+#
+# To use with ansible-playbook:
+# ansible-playbook site.yml --vault-password-file .vault_pass
+#
+# To decrypt vault.yml:
+# ansible-vault decrypt group_vars/all/vault.yml --vault-password-file .vault_pass
+#
+# To edit vault.yml:
+# ansible-vault edit group_vars/all/vault.yml --vault-password-file .vault_pass
