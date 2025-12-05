@@ -71,28 +71,32 @@ Backend Network (vmbr1)       │           │
 
 ## Technology Stack
 
-| Component | Version | Purpose |
-|-----------|---------|---------|
-| Proxmox VE | 9.0 | Virtualization Platform |
-| Debian | 13 (Trixie) | Container OS |
-| NetBox | Latest (main) | IPAM/DCIM Application |
-| PostgreSQL | 17.6 | Database |
-| Valkey | 8.1.1 | Cache & Task Queue |
-| Gunicorn | 23.0.0 | WSGI Server |
-| Nginx | Latest | Reverse Proxy |
-| Python | 3.13 | Runtime |
+All versions pinned to stable releases as of December 2025. See [VERSIONS.md](VERSIONS.md) for detailed version information.
+
+| Component | Version | Purpose | EOL |
+|-----------|---------|---------|-----|
+| Proxmox VE | 9.0.3 | Virtualization Platform | - |
+| Debian | 13.1 (Trixie) | Container OS | - |
+| NetBox | v4.4.7 | IPAM/DCIM Application | - |
+| PostgreSQL | 17.6 | Database | Nov 2029 |
+| Valkey | 8.1.1 | Cache & Task Queue | - |
+| Gunicorn | 23.0.0 | WSGI Server | - |
+| Nginx | 1.26.3 | Reverse Proxy | - |
+| Python | 3.13.5 | Runtime | Oct 2029 |
 
 ## NetBox Plugins
 
-All plugins at latest compatible versions:
+All plugins pinned to latest stable versions (December 2025):
 
-1. **netbox-dns** - DNS zone/record management
-2. **netbox-secrets** - Encrypted secret storage
-3. **netbox-acls** - Access control lists
-4. **netbox-bgp** - BGP peering management
-5. **netbox-inventory** - Enhanced inventory
-6. **netbox-floorplan** - Datacenter floor plans
-7. **netbox-reorder-rack** - Rack device reordering
+1. **netbox-plugin-dns** (v1.4.4) - DNS zone/record management
+2. **netbox-secrets** (v2.4.1) - Encrypted secret storage
+3. **netbox-acls** (v1.9.1) - Access control lists
+4. **netbox-bgp** (v0.17.0) - BGP peering management
+5. **netbox-inventory** (v2.4.1) - Enhanced inventory tracking
+6. **netbox-floorplan-plugin** (v0.8.0) - Datacenter floor planning
+7. **netbox-reorder-rack** (v1.1.4) - Rack device reordering
+
+See [VERSIONS.md](VERSIONS.md) for plugin repositories and compatibility information.
 
 ## Documentation
 

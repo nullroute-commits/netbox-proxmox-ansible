@@ -1,0 +1,96 @@
+---
+# Software versions - pinned to stable releases as of December 2025
+
+# Proxmox Host
+proxmox_version: "9.0"
+
+# Container Template
+debian_template: "debian-13-standard_13.1-2_amd64.tar.zst"
+debian_version: "13.1"
+debian_codename: "trixie"
+
+# PostgreSQL
+postgresql_version: "17"
+postgresql_full_version: "17.6"
+postgresql_package: "postgresql-17"
+
+# Valkey (Redis alternative)
+valkey_version: "8.1.1"
+valkey_package: "valkey-server"
+
+# NetBox
+netbox_version: "v4.4.7"  # Stable release tag
+netbox_repository: "https://github.com/netbox-community/netbox.git"
+netbox_branch: "main"     # Alternative: use main for latest
+
+# Python
+python_version: "3.13"
+python_full_version: "3.13.5"
+
+# Web Server
+nginx_version: "1.26"
+nginx_full_version: "1.26.3"
+
+# WSGI Server
+gunicorn_version: "23.0.0"
+
+# NetBox Plugins with exact versions
+netbox_plugins:
+  dns:
+    name: "netbox-plugin-dns"
+    version: "1.4.4"
+    repository: "https://github.com/auroraresearchlab/netbox-dns"
+  
+  secrets:
+    name: "netbox-secrets"
+    version: "2.4.1"
+    repository: "https://github.com/Onemind-Services-LLC/netbox-secrets"
+  
+  acls:
+    name: "netbox-acls"
+    version: "1.9.1"
+    repository: "https://github.com/netbox-community/netbox-acls"
+  
+  bgp:
+    name: "netbox-bgp"
+    version: "0.17.0"
+    repository: "https://github.com/netbox-community/netbox-bgp"
+  
+  inventory:
+    name: "netbox-inventory"
+    version: "2.4.1"
+    repository: "https://github.com/ArnesSI/netbox-inventory"
+  
+  floorplan:
+    name: "netbox-floorplan-plugin"
+    version: "0.8.0"
+    repository: "https://github.com/netbox-community/netbox-floorplan"
+  
+  reorder_rack:
+    name: "netbox-reorder-rack"
+    version: "1.1.4"
+    repository: "https://github.com/minitriga/netbox-reorder-rack"
+
+# Ansible Requirements
+ansible_min_version: "2.14.0"
+ansible_recommended_version: "2.16+"
+ansible_python_version: "3.9+"
+
+# Python packages for NetBox (pinned versions)
+netbox_python_packages:
+  - "gunicorn==23.0.0"
+  - "netbox-plugin-dns==1.4.4"
+  - "netbox-secrets==2.4.1"
+  - "netbox-acls==1.9.1"
+  - "netbox-bgp==0.17.0"
+  - "netbox-inventory==2.4.1"
+  - "netbox-floorplan-plugin==0.8.0"
+  - "netbox-reorder-rack==1.1.4"
+
+# Version compatibility notes
+version_compatibility:
+  netbox_python: "3.10-3.13"
+  netbox_postgresql: "15+"
+  netbox_valkey: "7.0+"
+  postgresql_eol: "2029-11"
+  python_eol: "2029-10"
