@@ -1,0 +1,56 @@
+---
+# roles/nginx_proxy/tasks/main.yml
+
+- name: Install Nginx and OpenSSL
+  apt:
+    name:
+      - nginx
+      - openssl
+    state: present
+    update_cache: yes
+
+- name: Create SSL directory
+  file:
+    path: /etc/nginx/ssl
+    state: directory
+    mode: '0755'
+
+- name: Generate self-signed SSL certificate
+  command: >
+    openssl req -x509 -nodes -days 365 -newkey rsa:4096
+    -keyout /etc/nginx/ssl/netbox.key
+    -out /etc/nginx/ssl/netbox.crt
+    -subj "/C={{ vault_ssl_country }}/ST={{ vault_ssl_state }}/L={{ vault_ssl_city }}/O={{ vault_ssl_organization }}/CN={{ vault_ssl_common_name }}"
+  args:
+    creates: /etc/nginx/ssl/netbox.crt
+
+- name: Set permissions on SSL key
+  file:
+    path: /etc/nginx/ssl/netbox.key
+    mode: '0600'
+
+- name: Template Nginx configuration
+  template:
+    src: netbox.conf.j2
+    dest: /etc/nginx/sites-available/netbox
+    mode: '0644'
+  notify: restart nginx
+
+- name: Enable NetBox site
+  file:
+    src: /etc/nginx/sites-available/netbox
+    dest: /etc/nginx/sites-enabled/netbox
+    state: link
+  notify: restart nginx
+
+- name: Disable default site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: restart nginx
+
+- name: Ensure Nginx is started and enabled
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes

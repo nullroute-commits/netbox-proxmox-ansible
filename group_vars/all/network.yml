@@ -1,0 +1,25 @@
+---
+# Network configuration
+
+backend_network:
+  name: vmbr1
+  cidr: 10.100.0.0/24
+  gateway: 10.100.0.1
+  comment: "Backend network (DB/Cache)"
+
+dmz_network:
+  name: vmbr2
+  cidr: 10.100.1.0/24
+  gateway: 10.100.1.1
+  comment: "DMZ network (Application)"
+
+external_network:
+  name: vmbr0
+  comment: "External network (Internet)"
+
+# NAT configuration
+nat_networks:
+  - "{{ backend_network.cidr }}"
+  - "{{ dmz_network.cidr }}"
+
+nat_output_interface: "{{ external_network.name }}"

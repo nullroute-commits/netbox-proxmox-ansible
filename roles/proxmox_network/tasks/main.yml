@@ -1,0 +1,42 @@
+---
+# roles/proxmox_network/tasks/main.yml
+
+- name: Check if bridge {{ backend_network.name }} exists
+  shell: ip link show {{ backend_network.name }}
+  register: backend_bridge_check
+  failed_when: false
+  changed_when: false
+
+- name: Create backend bridge {{ backend_network.name }}
+  shell: |
+    brctl addbr {{ backend_network.name }}
+    ip addr add {{ backend_network.gateway }}/24 dev {{ backend_network.name }}
+    ip link set {{ backend_network.name }} up
+  when: backend_bridge_check.rc != 0
+
+- name: Check if bridge {{ dmz_network.name }} exists
+  shell: ip link show {{ dmz_network.name }}
+  register: dmz_bridge_check
+  failed_when: false
+  changed_when: false
+
+- name: Create DMZ bridge {{ dmz_network.name }}
+  shell: |
+    brctl addbr {{ dmz_network.name }}
+    ip addr add {{ dmz_network.gateway }}/24 dev {{ dmz_network.name }}
+    ip link set {{ dmz_network.name }} up
+  when: dmz_bridge_check.rc != 0
+
+- name: Enable NAT for internal networks
+  iptables:
+    table: nat
+    chain: POSTROUTING
+    source: "{{ item }}"
+    out_interface: "{{ nat_output_interface }}"
+    jump: MASQUERADE
+    comment: "NAT for {{ item }}"
+  loop: "{{ nat_networks }}"
+
+- name: Save iptables rules
+  shell: iptables-save > /etc/iptables/rules.v4
+  changed_when: false

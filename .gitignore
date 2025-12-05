@@ -1,0 +1,48 @@
+# Ansible
+*.retry
+.vault_pass
+*.pyc
+__pycache__/
+.molecule/
+.cache/
+
+# Logs
+*.log
+/var/log/ansible/
+
+# Temporary files
+*.tmp
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Ansible facts cache
+/tmp/ansible_facts/
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# Sensitive data
+vault_pass.txt
+secrets/
+*.key
+*.pem
+
+# Backup files
+*.bak
+*.backup
+backup/
+backups/
+
+# Testing
+test_output/
+.pytest_cache/
+.tox/
+htmlcov/
+.coverage
+
+# OS
+Thumbs.db

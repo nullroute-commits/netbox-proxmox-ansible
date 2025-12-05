@@ -1,0 +1,15 @@
+---
+# Global variables for all hosts
+
+# Project information
+project_name: netbox-proxmox
+deployment_date: "{{ ansible_date_time.iso8601 }}"
+
+# Proxmox settings
+proxmox_node: "{{ ansible_hostname }}"
+proxmox_storage: local-zfs
+proxmox_template_storage: local
+
+# Template
+debian_template: debian-13-standard_13.1-2_amd64.tar.zst
+debian_template_url: "http://download.proxmox.com/images/system/{{ debian_template }}"

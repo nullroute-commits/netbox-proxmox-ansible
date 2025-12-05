@@ -1,0 +1,12 @@
+---
+# roles/nginx_proxy/handlers/main.yml
+
+- name: restart nginx
+  systemd:
+    name: nginx
+    state: restarted
+
+- name: reload nginx
+  systemd:
+    name: nginx
+    state: reloaded

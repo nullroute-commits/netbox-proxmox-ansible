@@ -1,0 +1,81 @@
+---
+# Container specifications
+
+containers:
+  netbox:
+    vmid: 100
+    hostname: netbox
+    ostype: unmanaged
+    cores: 2
+    memory: 4096
+    swap: 2048
+    rootfs_size: 32
+    storage: "{{ proxmox_storage }}"
+    unprivileged: true
+    onboot: true
+    features:
+      - nesting=1
+    networks:
+      - name: eth0
+        bridge: "{{ backend_network.name }}"
+        ip: 10.100.0.10/24
+        gw: "{{ backend_network.gateway }}"
+      - name: eth1
+        bridge: "{{ dmz_network.name }}"
+        ip: 10.100.1.10/24
+
+  database:
+    vmid: 101
+    hostname: netbox-db
+    ostype: unmanaged
+    cores: 2
+    memory: 2048
+    swap: 1024
+    rootfs_size: 16
+    storage: "{{ proxmox_storage }}"
+    unprivileged: true
+    onboot: true
+    features: []
+    networks:
+      - name: eth0
+        bridge: "{{ backend_network.name }}"
+        ip: 10.100.0.20/24
+        gw: "{{ backend_network.gateway }}"
+
+  cache:
+    vmid: 102
+    hostname: netbox-redis
+    ostype: unmanaged
+    cores: 1
+    memory: 1024
+    swap: 512
+    rootfs_size: 8
+    storage: "{{ proxmox_storage }}"
+    unprivileged: true
+    onboot: true
+    features: []
+    networks:
+      - name: eth0
+        bridge: "{{ backend_network.name }}"
+        ip: 10.100.0.30/24
+        gw: "{{ backend_network.gateway }}"
+
+  proxy:
+    vmid: 103
+    hostname: netbox-proxy
+    ostype: unmanaged
+    cores: 1
+    memory: 512
+    swap: 256
+    rootfs_size: 8
+    storage: "{{ proxmox_storage }}"
+    unprivileged: true
+    onboot: true
+    features: []
+    networks:
+      - name: eth0
+        bridge: "{{ external_network.name }}"
+        dhcp: true
+      - name: eth1
+        bridge: "{{ dmz_network.name }}"
+        ip: 10.100.1.40/24

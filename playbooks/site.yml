@@ -1,0 +1,227 @@
+---
+# NetBox on Proxmox VE 9.0 - Complete Deployment Playbook
+# This playbook deploys NetBox from greenfield Proxmox to fully operational state
+
+- name: Pre-flight checks
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+  tags: [always]
+
+  tasks:
+    - name: Verify Proxmox VE version
+      shell: pveversion | grep 'pve-manager'
+      register: pve_version
+      changed_when: false
+      failed_when: "'pve-manager' not in pve_version.stdout"
+
+    - name: Display Proxmox version
+      debug:
+        msg: "Running on {{ pve_version.stdout }}"
+
+    - name: Check available resources
+      shell: |
+        free -m | awk 'NR==2{printf "Memory: %s/%sMB (%.2f%%)\n", $3,$2,$3*100/$2}'
+        df -h | awk '$NF=="/"{printf "Disk: %d/%dGB (%s)\n", $3,$2,$5}'
+      register: resources
+      changed_when: false
+
+    - name: Display available resources
+      debug:
+        var: resources.stdout_lines
+
+# ==============================================================================
+# PHASE 1: Proxmox Host Configuration
+# ==============================================================================
+
+- name: Configure Proxmox host
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+  tags: [proxmox, host]
+
+  roles:
+    - role: proxmox_host
+
+# ==============================================================================
+# PHASE 2: Network Configuration
+# ==============================================================================
+
+- name: Configure network bridges and routing
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+  tags: [proxmox, network]
+
+  roles:
+    - role: proxmox_network
+
+  post_tasks:
+    - name: Verify network bridges
+      command: brctl show
+      register: bridges
+      changed_when: false
+
+    - name: Display configured bridges
+      debug:
+        var: bridges.stdout_lines
+
+# ==============================================================================
+# PHASE 3: Container Creation (Skeleton)
+# ==============================================================================
+
+- name: Container creation phase
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+  tags: [containers, create]
+
+  tasks:
+    - name: Check if template exists
+      stat:
+        path: "/var/lib/vz/template/cache/{{ debian_template }}"
+      register: template_stat
+
+    - name: Download Debian template if not present
+      command: pveam download {{ proxmox_template_storage }} {{ debian_template }}
+      when: not template_stat.stat.exists
+
+    - name: Create containers
+      include_role:
+        name: proxmox_container
+      vars:
+        container: "{{ item.value }}"
+      loop: "{{ containers | dict2items }}"
+      loop_control:
+        label: "{{ item.value.hostname }}"
+
+# ==============================================================================
+# PHASE 4: Configure Database Container (CT 101)
+# ==============================================================================
+
+- name: Configure PostgreSQL database container
+  hosts: ct101
+  gather_facts: yes
+  become: yes
+  tags: [database]
+
+  roles:
+    - role: debian_base
+    - role: postgresql
+
+# ==============================================================================
+# PHASE 5: Configure Cache Container (CT 102)
+# ==============================================================================
+
+- name: Configure Valkey cache container
+  hosts: ct102
+  gather_facts: yes
+  become: yes
+  tags: [cache]
+
+  roles:
+    - role: debian_base
+    - role: valkey
+
+# ==============================================================================
+# PHASE 6: Configure NetBox Application Container (CT 100)
+# ==============================================================================
+
+- name: Configure NetBox application container
+  hosts: ct100
+  gather_facts: yes
+  become: yes
+  tags: [netbox]
+
+  roles:
+    - role: debian_base
+    - role: netbox_app
+
+# ==============================================================================
+# PHASE 7: Configure Nginx Proxy Container (CT 103)
+# ==============================================================================
+
+- name: Configure Nginx reverse proxy container
+  hosts: ct103
+  gather_facts: yes
+  become: yes
+  tags: [proxy]
+
+  roles:
+    - role: debian_base
+    - role: nginx_proxy
+
+# ==============================================================================
+# PHASE 8: Post-Deployment Verification
+# ==============================================================================
+
+- name: Post-deployment verification
+  hosts: localhost
+  gather_facts: no
+  become: yes
+  tags: [always, verify]
+
+  tasks:
+    - name: Wait for all services to stabilize
+      wait_for:
+        timeout: 15
+
+    - name: Check container status
+      command: pct list
+      register: container_list
+      changed_when: false
+
+    - name: Display container status
+      debug:
+        var: container_list.stdout_lines
+
+    - name: Verify PostgreSQL service
+      command: pct exec 101 -- systemctl is-active postgresql
+      register: pg_status
+      changed_when: false
+      failed_when: false
+
+    - name: Verify NetBox service
+      command: pct exec 100 -- systemctl is-active netbox
+      register: netbox_status
+      changed_when: false
+      failed_when: false
+
+    - name: Verify Nginx service
+      command: pct exec 103 -- systemctl is-active nginx
+      register: nginx_status
+      changed_when: false
+      failed_when: false
+
+    - name: Get proxy container external IP
+      shell: pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+      register: proxy_ip
+      changed_when: false
+      failed_when: false
+
+    - name: Display deployment summary
+      debug:
+        msg:
+          - "============================================="
+          - "  NetBox Deployment Complete!"
+          - "============================================="
+          - ""
+          - "Services Status:"
+          - "  PostgreSQL: {{ pg_status.stdout | default('unknown') }}"
+          - "  NetBox:     {{ netbox_status.stdout | default('unknown') }}"
+          - "  Nginx:      {{ nginx_status.stdout | default('unknown') }}"
+          - ""
+          - "Access Information:"
+          - "  URL:      https://{{ proxy_ip.stdout | default('IP-not-found') }}"
+          - "  Username: admin"
+          - "  Password: {{ vault_netbox_admin_password }}"
+          - ""
+          - "Note: Using self-signed SSL certificate"
+          - "      Your browser will show a security warning"
+          - ""
+          - "Next Steps:"
+          - "  1. Access the web interface"
+          - "  2. Change admin password"
+          - "  3. Configure backup jobs"
+          - "  4. Replace with valid SSL certificate"
+          - "============================================="

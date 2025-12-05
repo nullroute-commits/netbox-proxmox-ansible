@@ -1,0 +1,17 @@
+---
+# Encrypted secrets - encrypt this file with: ansible-vault encrypt group_vars/all/vault.yml
+
+# PostgreSQL
+vault_postgresql_password: "NetBox123!"
+
+# NetBox
+vault_netbox_secret_key: "{{ lookup('password', '/dev/null length=50 chars=ascii_letters,digits') }}"
+vault_netbox_admin_password: "NetBox2024!"
+vault_netbox_admin_email: "admin@localhost"
+
+# SSL (for self-signed certs)
+vault_ssl_country: "US"
+vault_ssl_state: "State"
+vault_ssl_city: "City"
+vault_ssl_organization: "Organization"
+vault_ssl_common_name: "netbox.local"
