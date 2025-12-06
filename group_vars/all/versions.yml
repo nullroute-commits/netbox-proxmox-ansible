@@ -40,32 +40,32 @@ netbox_plugins:
     name: "netbox-plugin-dns"
     version: "1.4.4"
     repository: "https://github.com/auroraresearchlab/netbox-dns"
-  
+
   secrets:
     name: "netbox-secrets"
     version: "2.4.1"
     repository: "https://github.com/Onemind-Services-LLC/netbox-secrets"
-  
+
   acls:
     name: "netbox-acls"
     version: "1.9.1"
     repository: "https://github.com/netbox-community/netbox-acls"
-  
+
   bgp:
     name: "netbox-bgp"
     version: "0.17.0"
     repository: "https://github.com/netbox-community/netbox-bgp"
-  
+
   inventory:
     name: "netbox-inventory"
     version: "2.4.1"
     repository: "https://github.com/ArnesSI/netbox-inventory"
-  
+
   floorplan:
     name: "netbox-floorplan-plugin"
     version: "0.8.0"
     repository: "https://github.com/netbox-community/netbox-floorplan"
-  
+
   reorder_rack:
     name: "netbox-reorder-rack"
     version: "1.1.4"
