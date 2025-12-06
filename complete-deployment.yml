@@ -97,8 +97,11 @@
         timeout: 10
 
     - name: Get proxy container IP
-      ansible.builtin.shell: >
-        pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+        executable: /bin/bash
       register: complete_proxy_ip
       changed_when: false
 

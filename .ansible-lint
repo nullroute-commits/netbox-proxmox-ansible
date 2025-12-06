@@ -27,12 +27,8 @@ skip_list:
 
 # Rules to warn about but not fail
 warn_list:
-  # Shell module usage for pct commands (no Ansible module alternative)
-  - command-instead-of-shell
-  # Some operations require shell commands due to Proxmox pct interface
-  - command-instead-of-module
-  # Risky shell pipes may be necessary for complex operations
-  - risky-shell-pipe
+  # Internal errors related to vault.yml decryption in lint mode
+  - internal-error
 
 # Enable specific optional checks
 enable_list:
@@ -52,7 +48,8 @@ kinds:
   - meta: "roles/*/meta/*.yml"
 
 # Mock modules and roles for offline mode
-mock_modules: []
+mock_modules:
+  - ansible.posix.sysctl
 mock_roles: []
 
 # Verbosity level

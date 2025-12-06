@@ -8,7 +8,7 @@
 
   tasks:
     - name: Check all containers status
-      ansible.builtin.shell: pct list
+      ansible.builtin.command: pct list
       register: verify_containers
       changed_when: false
 
@@ -61,8 +61,11 @@
       failed_when: false
 
     - name: Get proxy IP address
-      ansible.builtin.shell: >
-        pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+        executable: /bin/bash
       register: verify_proxy_ip
       changed_when: false
 

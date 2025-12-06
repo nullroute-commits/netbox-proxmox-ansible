@@ -2,30 +2,36 @@
 # roles/proxmox_network/tasks/main.yml
 
 - name: Check if backend bridge exists
-  ansible.builtin.shell: ip link show {{ proxmox_network_backend.name | default(backend_network.name) }}
+  ansible.builtin.command: ip link show {{ proxmox_network_backend.name | default(backend_network.name) }}
   register: proxmox_network_backend_check
   failed_when: false
   changed_when: false
 
 - name: Create backend bridge
-  ansible.builtin.shell: |
-    brctl addbr {{ proxmox_network_backend.name | default(backend_network.name) }}
-    ip addr add {{ proxmox_network_backend.gateway | default(backend_network.gateway) }}/24 dev {{ proxmox_network_backend.name | default(backend_network.name) }}
-    ip link set {{ proxmox_network_backend.name | default(backend_network.name) }} up
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      brctl addbr {{ proxmox_network_backend.name | default(backend_network.name) }}
+      ip addr add {{ proxmox_network_backend.gateway | default(backend_network.gateway) }}/24 dev {{ proxmox_network_backend.name | default(backend_network.name) }}
+      ip link set {{ proxmox_network_backend.name | default(backend_network.name) }} up
+    executable: /bin/bash
   when: proxmox_network_backend_check.rc != 0
   changed_when: true
 
 - name: Check if DMZ bridge exists
-  ansible.builtin.shell: ip link show {{ proxmox_network_dmz.name | default(dmz_network.name) }}
+  ansible.builtin.command: ip link show {{ proxmox_network_dmz.name | default(dmz_network.name) }}
   register: proxmox_network_dmz_check
   failed_when: false
   changed_when: false
 
 - name: Create DMZ bridge
-  ansible.builtin.shell: |
-    brctl addbr {{ proxmox_network_dmz.name | default(dmz_network.name) }}
-    ip addr add {{ proxmox_network_dmz.gateway | default(dmz_network.gateway) }}/24 dev {{ proxmox_network_dmz.name | default(dmz_network.name) }}
-    ip link set {{ proxmox_network_dmz.name | default(dmz_network.name) }} up
+  ansible.builtin.shell:
+    cmd: |
+      set -o pipefail
+      brctl addbr {{ proxmox_network_dmz.name | default(dmz_network.name) }}
+      ip addr add {{ proxmox_network_dmz.gateway | default(dmz_network.gateway) }}/24 dev {{ proxmox_network_dmz.name | default(dmz_network.name) }}
+      ip link set {{ proxmox_network_dmz.name | default(dmz_network.name) }} up
+    executable: /bin/bash
   when: proxmox_network_dmz_check.rc != 0
   changed_when: true
 
@@ -41,5 +47,7 @@
   when: proxmox_network_nat_enabled | default(true)
 
 - name: Save iptables rules
-  ansible.builtin.shell: iptables-save > {{ proxmox_network_iptables_rules }}
+  ansible.builtin.shell:
+    cmd: iptables-save > {{ proxmox_network_iptables_rules }}
+    executable: /bin/bash
   changed_when: false

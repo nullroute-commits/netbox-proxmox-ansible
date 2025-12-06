@@ -10,7 +10,11 @@
 
   tasks:
     - name: Verify Proxmox VE version
-      ansible.builtin.shell: pveversion | grep 'pve-manager'
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pveversion | grep 'pve-manager'
+        executable: /bin/bash
       register: site_pve_version
       changed_when: false
       failed_when: "'pve-manager' not in site_pve_version.stdout"
@@ -20,9 +24,12 @@
         msg: "Running on {{ site_pve_version.stdout }}"
 
     - name: Check available resources
-      ansible.builtin.shell: |
-        free -m | awk 'NR==2{printf "Memory: %s/%sMB (%.2f%%)\n", $3,$2,$3*100/$2}'
-        df -h | awk '$NF=="/"{printf "Disk: %d/%dGB (%s)\n", $3,$2,$5}'
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          free -m | awk 'NR==2{printf "Memory: %s/%sMB (%.2f%%)\n", $3,$2,$3*100/$2}'
+          df -h | awk '$NF=="/"{printf "Disk: %d/%dGB (%s)\n", $3,$2,$5}'
+        executable: /bin/bash
       register: site_resources
       changed_when: false
 
@@ -91,7 +98,7 @@
       ansible.builtin.include_role:
         name: proxmox_container
       vars:
-        container: "{{ item.value }}"
+        proxmox_container_item: "{{ item.value }}"
       loop: "{{ containers | dict2items }}"
       loop_control:
         label: "{{ item.value.hostname }}"
@@ -195,8 +202,11 @@
       failed_when: false
 
     - name: Get proxy container external IP
-      ansible.builtin.shell: >
-        pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+      ansible.builtin.shell:
+        cmd: |
+          set -o pipefail
+          pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+        executable: /bin/bash
       register: site_proxy_ip
       changed_when: false
       failed_when: false

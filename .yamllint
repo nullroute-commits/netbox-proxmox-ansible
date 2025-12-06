@@ -34,14 +34,15 @@ rules:
     indent-sequences: true
     check-multi-line-strings: false
 
-  # Comments - require proper spacing
+  # Comments - disable indentation checking (ansible-lint requirement)
   comments:
     require-starting-space: true
     min-spaces-from-content: 1
+  comments-indentation: false
 
-  # Braces - allow single-line inline dicts
+  # Braces - ansible-lint requires min-spaces-inside: 0
   braces:
-    min-spaces-inside: 1
+    min-spaces-inside: 0
     max-spaces-inside: 1
     min-spaces-inside-empty: 0
     max-spaces-inside-empty: 0
@@ -99,10 +100,10 @@ rules:
   new-lines:
     type: unix
 
-  # Octal values - allow octal values (common for permissions)
+  # Octal values - ansible-lint requires these to be true
   octal-values:
-    forbid-implicit-octal: false
-    forbid-explicit-octal: false
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
 
   # Quoted strings - don't require specific quoting
   quoted-strings:
