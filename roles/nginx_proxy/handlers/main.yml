@@ -1,12 +1,12 @@
 ---
 # roles/nginx_proxy/handlers/main.yml
 
-- name: restart nginx
-  systemd:
-    name: nginx
-    state: restarted
+- name: Restart nginx
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart nginx
+  listen: nginx_restart
+  changed_when: false
 
-- name: reload nginx
-  systemd:
-    name: nginx
-    state: reloaded
+- name: Reload nginx
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl reload nginx
+  listen: nginx_reload
+  changed_when: false

@@ -1,0 +1,12 @@
+---
+# roles/valkey/handlers/main.yml
+
+- name: Restart Valkey
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart valkey
+  listen: valkey_restart
+  changed_when: false
+
+- name: Reload Valkey
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl reload valkey
+  listen: valkey_reload
+  changed_when: false

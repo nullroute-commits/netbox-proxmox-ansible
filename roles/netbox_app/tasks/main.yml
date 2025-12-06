@@ -2,183 +2,208 @@
 # roles/netbox_app/tasks/main.yml
 
 - name: Install Python and dependencies
-  command: pct exec {{ container.vmid }} -- apt install -y python3 python3-pip python3-venv python3-dev build-essential libxml2-dev libxslt1-dev libffi-dev libpq-dev libssl-dev zlib1g-dev git
-  register: python_install
-  changed_when: "'0 newly installed' not in python_install.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- apt install -y {{ netbox_app_python_packages | join(' ') }}
+  register: netbox_app_python_install
+  changed_when: "'0 newly installed' not in netbox_app_python_install.stdout"
 
 - name: Install PostgreSQL client
-  command: pct exec {{ container.vmid }} -- apt install -y postgresql-client-{{ postgresql_version }}
-  register: pg_client_install
-  changed_when: "'0 newly installed' not in pg_client_install.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- apt install -y postgresql-client-{{ postgresql_version }}
+  register: netbox_app_pg_client_install
+  changed_when: "'0 newly installed' not in netbox_app_pg_client_install.stdout"
 
 - name: Clone NetBox repository
-  command: pct exec {{ container.vmid }} -- bash -c "if [ ! -d /opt/netbox ]; then git clone --branch {{ netbox_version }} {{ netbox_repository }} /opt/netbox; fi"
-  register: git_clone
-  changed_when: "'Cloning' in git_clone.stderr"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "if [ ! -d {{ netbox_app_install_path }} ]; then
+    git clone --branch {{ netbox_app_version | default(netbox_version) }}
+    {{ netbox_app_repository | default(netbox_repository) }} {{ netbox_app_install_path }}; fi"
+  register: netbox_app_git_clone
+  changed_when: "'Cloning' in netbox_app_git_clone.stderr"
 
 - name: Create NetBox system user
-  command: pct exec {{ container.vmid }} -- bash -c "id netbox || useradd --system --shell /bin/bash --home-dir /opt/netbox netbox"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "id {{ netbox_app_user }} || useradd --system --shell /bin/bash
+    --home-dir {{ netbox_app_install_path }} {{ netbox_app_user }}"
   changed_when: false
   failed_when: false
 
 - name: Set NetBox directory ownership
-  command: pct exec {{ container.vmid }} -- chown -R netbox:netbox /opt/netbox
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- chown -R {{ netbox_app_user }}:{{ netbox_app_group }} {{ netbox_app_install_path }}
   changed_when: false
 
 - name: Create Python virtual environment
-  command: pct exec {{ container.vmid }} -- sudo -u netbox python3 -m venv /opt/netbox/venv
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    python3 -m venv {{ netbox_app_install_path }}/venv
   args:
-    creates: /opt/netbox/venv
-  register: venv_create
+    creates: "{{ netbox_app_install_path }}/venv"
+  register: netbox_app_venv_create
   changed_when: false
   failed_when: false
 
 - name: Upgrade pip in virtual environment
-  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install --upgrade pip
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    {{ netbox_app_install_path }}/venv/bin/pip install --upgrade pip
   changed_when: false
 
 - name: Install NetBox Python requirements
-  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install -r /opt/netbox/requirements.txt
-  register: pip_install
-  changed_when: "'Successfully installed' in pip_install.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    {{ netbox_app_install_path }}/venv/bin/pip install -r {{ netbox_app_install_path }}/requirements.txt
+  register: netbox_app_pip_install
+  changed_when: "'Successfully installed' in netbox_app_pip_install.stdout"
 
 - name: Install Gunicorn
-  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install gunicorn=={{ gunicorn_version }}
-  register: gunicorn_install
-  changed_when: "'Successfully installed' in gunicorn_install.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    {{ netbox_app_install_path }}/venv/bin/pip install gunicorn=={{ netbox_app_gunicorn_version | default(gunicorn_version) }}
+  register: netbox_app_gunicorn_install
+  changed_when: "'Successfully installed' in netbox_app_gunicorn_install.stdout"
 
 - name: Install NetBox plugins
-  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install {{ item }}
-  loop: "{{ netbox_python_packages }}"
-  register: plugins_install
-  changed_when: "'Successfully installed' in plugins_install.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    {{ netbox_app_install_path }}/venv/bin/pip install {{ item }}
+  loop: "{{ netbox_app_plugins | default(netbox_python_packages) }}"
+  register: netbox_app_plugins_install
+  changed_when: "'Successfully installed' in netbox_app_plugins_install.stdout"
 
 - name: Generate secret key
-  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/python3 /opt/netbox/netbox/generate_secret_key.py
-  register: secret_key
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    {{ netbox_app_install_path }}/venv/bin/python3 {{ netbox_app_install_path }}/netbox/generate_secret_key.py
+  register: netbox_app_secret_key
   changed_when: false
 
 - name: Create NetBox configuration
-  shell: |
-    pct exec {{ container.vmid }} -- sudo -u netbox bash -c 'cat > /opt/netbox/netbox/netbox/configuration.py << "EOF"
-    ALLOWED_HOSTS = ["*"]
-    
+  ansible.builtin.shell: |
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }} bash -c 'cat > {{ netbox_app_install_path }}/netbox/netbox/configuration.py << "EOF"
+    ALLOWED_HOSTS = {{ netbox_app_allowed_hosts | to_json }}
+
     DATABASE = {
-        "NAME": "netbox",
-        "USER": "netbox",
+        "NAME": "{{ netbox_app_database_name | default(postgresql_netbox_database) | default('netbox') }}",
+        "USER": "{{ netbox_app_database_user | default(postgresql_netbox_user) | default('netbox') }}",
         "PASSWORD": "{{ vault_netbox_db_password }}",
         "HOST": "{{ containers.database.backend_ip }}",
         "PORT": "",
         "CONN_MAX_AGE": 300,
     }
-    
+
     REDIS = {
         "tasks": {
             "HOST": "{{ containers.cache.backend_ip }}",
-            "PORT": 6379,
-            "PASSWORD": "",
-            "DATABASE": 0,
-            "SSL": False,
+            "PORT": {{ netbox_app_redis_port }},
+            "PASSWORD": "{{ netbox_app_redis_password }}",
+            "DATABASE": {{ netbox_app_redis_tasks_database }},
+            "SSL": {{ netbox_app_redis_ssl | string | capitalize }},
         },
         "caching": {
             "HOST": "{{ containers.cache.backend_ip }}",
-            "PORT": 6379,
-            "PASSWORD": "",
-            "DATABASE": 1,
-            "SSL": False,
+            "PORT": {{ netbox_app_redis_port }},
+            "PASSWORD": "{{ netbox_app_redis_password }}",
+            "DATABASE": {{ netbox_app_redis_caching_database }},
+            "SSL": {{ netbox_app_redis_ssl | string | capitalize }},
         }
     }
-    
-    SECRET_KEY = "{{ secret_key.stdout }}"
-    
-    PLUGINS = [
-        "netbox_dns",
-        "netbox_secrets",
-        "netbox_acls",
-        "netbox_bgp",
-        "netbox_inventory",
-        "netbox_floorplan",
-        "netbox_reorder_rack",
-    ]
-    
+
+    SECRET_KEY = "{{ netbox_app_secret_key.stdout }}"
+
+    PLUGINS = {{ netbox_app_plugin_modules | to_json }}
+
     PLUGINS_CONFIG = {}
     EOF'
   changed_when: false
 
 - name: Run database migrations
-  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/python3 /opt/netbox/netbox/manage.py migrate
-  register: migrate
-  changed_when: "'Applying' in migrate.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    {{ netbox_app_install_path }}/venv/bin/python3 {{ netbox_app_install_path }}/netbox/manage.py migrate
+  register: netbox_app_migrate
+  changed_when: "'Applying' in netbox_app_migrate.stdout"
 
 - name: Create NetBox superuser
-  command: pct exec {{ container.vmid }} -- sudo -u netbox bash -c "DJANGO_SUPERUSER_PASSWORD='{{ vault_netbox_admin_password }}' /opt/netbox/venv/bin/python3 /opt/netbox/netbox/manage.py createsuperuser --noinput --username admin --email admin@localhost"
-  register: superuser
-  changed_when: "'Superuser created successfully' in superuser.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }} bash -c
+    "DJANGO_SUPERUSER_PASSWORD='{{ vault_netbox_admin_password }}'
+    {{ netbox_app_install_path }}/venv/bin/python3 {{ netbox_app_install_path }}/netbox/manage.py
+    createsuperuser --noinput --username {{ netbox_app_superuser_username }}
+    --email {{ netbox_app_superuser_email }}"
+  register: netbox_app_superuser
+  changed_when: "'Superuser created successfully' in netbox_app_superuser.stdout"
   failed_when:
-    - superuser.rc != 0
-    - "'already exists' not in superuser.stderr"
+    - netbox_app_superuser.rc != 0
+    - "'already exists' not in netbox_app_superuser.stderr"
 
 - name: Collect static files
-  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/python3 /opt/netbox/netbox/manage.py collectstatic --noinput
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u {{ netbox_app_user }}
+    {{ netbox_app_install_path }}/venv/bin/python3 {{ netbox_app_install_path }}/netbox/manage.py collectstatic --noinput
   changed_when: false
 
 - name: Create Gunicorn configuration
-  shell: |
-    pct exec {{ container.vmid }} -- bash -c 'cat > /opt/netbox/gunicorn.py << "EOF"
-    command = "/opt/netbox/venv/bin/gunicorn"
-    pythonpath = "/opt/netbox/netbox"
-    bind = "0.0.0.0:8000"
-    workers = 4
-    user = "netbox"
+  ansible.builtin.shell: |
+    pct exec {{ container.vmid }} -- bash -c 'cat > {{ netbox_app_install_path }}/gunicorn.py << "EOF"
+    command = "{{ netbox_app_install_path }}/venv/bin/gunicorn"
+    pythonpath = "{{ netbox_app_install_path }}/netbox"
+    bind = "{{ netbox_app_gunicorn_bind }}"
+    workers = {{ netbox_app_gunicorn_workers }}
+    user = "{{ netbox_app_user }}"
     EOF'
   changed_when: false
 
 - name: Create NetBox systemd service
-  shell: |
+  ansible.builtin.shell: |
     pct exec {{ container.vmid }} -- bash -c 'cat > /etc/systemd/system/netbox.service << "EOF"
     [Unit]
     Description=NetBox WSGI Service
     Documentation=https://docs.netbox.dev/
     After=network-online.target
     Wants=network-online.target
-    
+
     [Service]
     Type=simple
-    User=netbox
-    Group=netbox
-    WorkingDirectory=/opt/netbox/netbox
-    Environment="PATH=/opt/netbox/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
-    ExecStart=/opt/netbox/venv/bin/gunicorn --pid /var/tmp/netbox.pid --pythonpath /opt/netbox/netbox --config /opt/netbox/gunicorn.py netbox.wsgi
+    User={{ netbox_app_user }}
+    Group={{ netbox_app_group }}
+    WorkingDirectory={{ netbox_app_install_path }}/netbox
+    Environment="PATH={{ netbox_app_install_path }}/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    ExecStart={{ netbox_app_install_path }}/venv/bin/gunicorn --pid /var/tmp/netbox.pid --pythonpath {{ netbox_app_install_path }}/netbox --config {{ netbox_app_install_path }}/gunicorn.py netbox.wsgi
     Restart=on-failure
     RestartSec=30
     PrivateTmp=true
-    
+
     [Install]
     WantedBy=multi-user.target
     EOF'
   changed_when: false
 
 - name: Reload systemd
-  command: pct exec {{ container.vmid }} -- systemctl daemon-reload
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl daemon-reload
   changed_when: false
 
 - name: Enable and start NetBox service
-  command: pct exec {{ container.vmid }} -- systemctl enable --now netbox
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl enable --now netbox
   changed_when: false
 
 - name: Wait for NetBox to be ready
-  command: pct exec {{ container.vmid }} -- bash -c "curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/"
-  register: netbox_check
-  until: netbox_check.stdout == "200"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/"
+  register: netbox_app_check
+  until: netbox_app_check.stdout == "200"
   retries: 30
   delay: 5
   changed_when: false
 
 - name: Display NetBox status
-  debug:
+  ansible.builtin.debug:
     msg:
-      - "NetBox {{ netbox_version }} installed and running"
-      - "Listening on: 0.0.0.0:8000"
-      - "Admin user: admin"
-      - "Plugins installed: 7"
-      - "HTTP Status: {{ netbox_check.stdout }}"
+      - "NetBox {{ netbox_app_version | default(netbox_version) }} installed and running"
+      - "Listening on: {{ netbox_app_gunicorn_bind }}"
+      - "Admin user: {{ netbox_app_superuser_username }}"
+      - "Plugins installed: {{ netbox_app_plugin_modules | length }}"
+      - "HTTP Status: {{ netbox_app_check.stdout }}"

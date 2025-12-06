@@ -1,63 +1,68 @@
 ---
 # roles/proxmox_container/tasks/main.yml
 
-- name: Check if container {{ container.vmid }} exists
-  shell: pct status {{ container.vmid }}
-  register: container_status
+- name: Check if container exists
+  ansible.builtin.shell: pct status {{ container.vmid }}
+  register: proxmox_container_status
   failed_when: false
   changed_when: false
 
-- name: Create container {{ container.hostname }}
-  command: >
+- name: Create container
+  ansible.builtin.command: >
     pct create {{ container.vmid }}
-    local:vztmpl/{{ debian_template }}
+    {{ proxmox_container_template_storage }}:vztmpl/{{ proxmox_container_template | default(debian_template) }}
     --hostname {{ container.hostname }}
-    --cores {{ container.cpu }}
-    --memory {{ container.memory }}
-    --swap {{ container.swap | default(512) }}
-    --rootfs local-zfs:{{ container.disk }}
-    --unprivileged 1
+    --cores {{ container.cpu | default(proxmox_container_default_cores) }}
+    --memory {{ container.memory | default(proxmox_container_default_memory) }}
+    --swap {{ container.swap | default(proxmox_container_default_swap) }}
+    --rootfs {{ proxmox_container_storage }}:{{ container.disk | default(proxmox_container_default_disk) }}
+    --unprivileged {{ 1 if proxmox_container_unprivileged else 0 }}
     --features nesting=1
-    --onboot 1
+    --onboot {{ 1 if proxmox_container_onboot else 0 }}
     --start 0
     --password {{ vault_container_root_password }}
-    --ostype unmanaged
-  when: container_status.rc != 0
+    --ostype {{ proxmox_container_ostype }}
+  when: proxmox_container_status.rc != 0
+  changed_when: true
 
-- name: Configure network interfaces for {{ container.hostname }}
+- name: Configure network interfaces for container
+  when: proxmox_container_status.rc != 0
   block:
     - name: Add backend network interface (eth0)
-      command: >
+      ansible.builtin.command: >
         pct set {{ container.vmid }}
-        --net0 name=eth0,bridge={{ backend_network.name }},ip={{ container.backend_ip }}/24,gw={{ backend_network.gateway }}
+        --net0 name={{ proxmox_container_net0_name }},bridge={{ backend_network.name }},ip={{ container.backend_ip }}/24,gw={{ backend_network.gateway }}
       when: container.backend_ip is defined
+      changed_when: true
 
     - name: Add DMZ network interface (eth1)
-      command: >
+      ansible.builtin.command: >
         pct set {{ container.vmid }}
-        --net1 name=eth1,bridge={{ dmz_network.name }},ip={{ container.dmz_ip }}/24,gw={{ dmz_network.gateway }}
+        --net1 name={{ proxmox_container_net1_name }},bridge={{ dmz_network.name }},ip={{ container.dmz_ip }}/24,gw={{ dmz_network.gateway }}
       when: container.dmz_ip is defined
+      changed_when: true
 
     - name: Add external network interface (eth0)
-      command: >
+      ansible.builtin.command: >
         pct set {{ container.vmid }}
-        --net0 name=eth0,bridge={{ external_network.name }},ip=dhcp
-      when: 
+        --net0 name={{ proxmox_container_net0_name }},bridge={{ external_network.name }},ip=dhcp
+      when:
         - container.backend_ip is not defined
         - container.dmz_ip is not defined
-  when: container_status.rc != 0
+      changed_when: true
 
-- name: Start container {{ container.hostname }}
-  command: pct start {{ container.vmid }}
-  when: container_status.rc != 0
+- name: Start container
+  ansible.builtin.command: pct start {{ container.vmid }}
+  when: proxmox_container_status.rc != 0
+  changed_when: true
 
 - name: Wait for container to be ready
-  wait_for:
-    timeout: 30
-  when: container_status.rc != 0
+  ansible.builtin.wait_for:
+    timeout: "{{ proxmox_container_wait_timeout }}"
+  when: proxmox_container_status.rc != 0
 
-- name: Create network interfaces file for {{ container.hostname }}
-  shell: |
+- name: Create network interfaces file for container
+  ansible.builtin.shell: |
     pct exec {{ container.vmid }} -- bash -c 'cat > /etc/network/interfaces << EOF
     auto lo
     iface lo inet loopback
@@ -80,15 +85,17 @@
         {% endif %}
     {% endif %}
     EOF'
-  when: container_status.rc != 0
+  when: proxmox_container_status.rc != 0
+  changed_when: true
 
-- name: Restart networking in {{ container.hostname }}
-  command: pct exec {{ container.vmid }} -- systemctl restart networking
-  when: container_status.rc != 0
+- name: Restart networking in container
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart networking
+  when: proxmox_container_status.rc != 0
   failed_when: false
+  changed_when: true
 
 - name: Display container info
-  debug:
+  ansible.builtin.debug:
     msg:
       - "Container {{ container.hostname }} ({{ container.vmid }}) configured"
       - "Backend IP: {{ container.backend_ip | default('N/A') }}"

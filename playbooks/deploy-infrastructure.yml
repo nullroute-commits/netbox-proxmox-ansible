@@ -4,8 +4,8 @@
 
 - name: NetBox Full Deployment
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -15,7 +15,7 @@
 
   tasks:
     - name: Display deployment info
-      debug:
+      ansible.builtin.debug:
         msg:
           - "Starting NetBox deployment on Proxmox VE 9.0"
           - "NetBox version: {{ netbox_version }}"
@@ -23,63 +23,65 @@
           - "Valkey version: {{ valkey_version }}"
 
     - name: Verify Proxmox version
-      shell: pveversion | grep 'pve-manager'
-      register: pve_version
+      ansible.builtin.shell: pveversion | grep 'pve-manager'
+      register: deploy_pve_version
       changed_when: false
 
     - name: Display Proxmox version
-      debug:
-        var: pve_version.stdout
+      ansible.builtin.debug:
+        var: deploy_pve_version.stdout
 
     - name: Install required packages
-      apt:
+      ansible.builtin.apt:
         name:
           - bridge-utils
           - python3-proxmoxer
           - python3-requests
           - iptables-persistent
         state: present
-        update_cache: yes
+        update_cache: true
 
     - name: Configure sysctl for IP forwarding
-      sysctl:
+      ansible.posix.sysctl:
         name: "{{ item.name }}"
         value: "{{ item.value }}"
         state: present
-        reload: yes
+        reload: true
       loop:
         - { name: 'net.ipv4.ip_forward', value: '1' }
         - { name: 'vm.overcommit_memory', value: '1' }
         - { name: 'net.ipv4.conf.all.rp_filter', value: '0' }
 
     - name: Check if backend bridge exists
-      shell: ip link show {{ backend_network.name }}
-      register: backend_check
+      ansible.builtin.shell: ip link show {{ backend_network.name }}
+      register: deploy_backend_check
       failed_when: false
       changed_when: false
 
     - name: Create backend bridge vmbr1
-      shell: |
+      ansible.builtin.shell: |
         brctl addbr {{ backend_network.name }}
         ip addr add {{ backend_network.gateway }}/24 dev {{ backend_network.name }}
         ip link set {{ backend_network.name }} up
-      when: backend_check.rc != 0
+      when: deploy_backend_check.rc != 0
+      changed_when: true
 
     - name: Check if DMZ bridge exists
-      shell: ip link show {{ dmz_network.name }}
-      register: dmz_check
+      ansible.builtin.shell: ip link show {{ dmz_network.name }}
+      register: deploy_dmz_check
       failed_when: false
       changed_when: false
 
     - name: Create DMZ bridge vmbr2
-      shell: |
+      ansible.builtin.shell: |
         brctl addbr {{ dmz_network.name }}
         ip addr add {{ dmz_network.gateway }}/24 dev {{ dmz_network.name }}
         ip link set {{ dmz_network.name }} up
-      when: dmz_check.rc != 0
+      when: deploy_dmz_check.rc != 0
+      changed_when: true
 
     - name: Enable NAT for backend network
-      iptables:
+      ansible.builtin.iptables:
         table: nat
         chain: POSTROUTING
         source: "{{ backend_network.cidr }}"
@@ -88,7 +90,7 @@
         comment: "NAT for backend network"
 
     - name: Enable NAT for DMZ network
-      iptables:
+      ansible.builtin.iptables:
         table: nat
         chain: POSTROUTING
         source: "{{ dmz_network.cidr }}"
@@ -97,28 +99,29 @@
         comment: "NAT for DMZ network"
 
     - name: Save iptables rules
-      shell: iptables-save > /etc/iptables/rules.v4
+      ansible.builtin.shell: iptables-save > /etc/iptables/rules.v4
       changed_when: false
 
     - name: Display network status
-      shell: brctl show
-      register: bridges
+      ansible.builtin.shell: brctl show
+      register: deploy_bridges
       changed_when: false
 
     - name: Show configured bridges
-      debug:
-        var: bridges.stdout_lines
+      ansible.builtin.debug:
+        var: deploy_bridges.stdout_lines
 
     - name: Check if Debian template exists
-      stat:
+      ansible.builtin.stat:
         path: "/var/lib/vz/template/cache/{{ debian_template }}"
-      register: template_check
+      register: deploy_template_check
 
     - name: Download Debian template
-      command: pveam download local {{ debian_template }}
-      when: not template_check.stat.exists
+      ansible.builtin.command: pveam download local {{ debian_template }}
+      when: not deploy_template_check.stat.exists
+      changed_when: true
 
     - name: Display deployment message
-      debug:
+      ansible.builtin.debug:
         msg: "Infrastructure ready. Manual container deployment recommended due to incomplete automation roles."
 

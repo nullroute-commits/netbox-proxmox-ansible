@@ -3,114 +3,117 @@
 
 - name: Verify NetBox Deployment
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   tasks:
     - name: Check all containers status
-      shell: pct list
-      register: containers
+      ansible.builtin.shell: pct list
+      register: verify_containers
       changed_when: false
 
     - name: Display containers
-      debug:
-        msg: "{{ containers.stdout_lines }}"
+      ansible.builtin.debug:
+        msg: "{{ verify_containers.stdout_lines }}"
 
     - name: Check service status - PostgreSQL
-      command: pct exec 101 -- systemctl is-active postgresql
-      register: pg_status
+      ansible.builtin.command: pct exec 101 -- systemctl is-active postgresql
+      register: verify_pg_status
       changed_when: false
       failed_when: false
 
     - name: Check service status - NetBox
-      command: pct exec 100 -- systemctl is-active netbox
-      register: nb_status
+      ansible.builtin.command: pct exec 100 -- systemctl is-active netbox
+      register: verify_nb_status
       changed_when: false
       failed_when: false
 
     - name: Check service status - Nginx
-      command: pct exec 103 -- systemctl is-active nginx
-      register: nginx_status
+      ansible.builtin.command: pct exec 103 -- systemctl is-active nginx
+      register: verify_nginx_status
       changed_when: false
       failed_when: false
 
     - name: Test database connectivity
-      command: pct exec 100 -- bash -c "PGPASSWORD='NetBox123!' psql -h 10.100.0.20 -U netbox -d netbox -c 'SELECT 1;'"
-      register: db_test
+      ansible.builtin.command: >
+        pct exec 100 -- bash -c
+        "PGPASSWORD='NetBox123!' psql -h 10.100.0.20 -U netbox -d netbox -c 'SELECT 1;'"
+      register: verify_db_test
       changed_when: false
       failed_when: false
 
     - name: Test Valkey connectivity
-      command: pct exec 102 -- valkey-cli ping
-      register: valkey_test
+      ansible.builtin.command: pct exec 102 -- valkey-cli ping
+      register: verify_valkey_test
       changed_when: false
       failed_when: false
 
     - name: Check NetBox is responding
-      command: pct exec 100 -- ss -tlnp | grep 8000
-      register: netbox_port
+      ansible.builtin.command: pct exec 100 -- ss -tlnp | grep 8000
+      register: verify_netbox_port
       changed_when: false
       failed_when: false
 
     - name: Check Nginx is responding
-      command: pct exec 103 -- ss -tlnp | grep -E '(80|443)'
-      register: nginx_port
+      ansible.builtin.command: pct exec 103 -- ss -tlnp | grep -E '(80|443)'
+      register: verify_nginx_port
       changed_when: false
       failed_when: false
 
     - name: Get proxy IP address
-      shell: pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
-      register: proxy_ip
+      ansible.builtin.shell: >
+        pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+      register: verify_proxy_ip
       changed_when: false
 
     - name: Test HTTPS endpoint
-      uri:
-        url: "https://{{ proxy_ip.stdout }}"
-        validate_certs: no
+      ansible.builtin.uri:
+        url: "https://{{ verify_proxy_ip.stdout }}"
+        validate_certs: false
         status_code: [200, 301, 302]
-      register: https_test
+      register: verify_https_test
       failed_when: false
 
     - name: Display verification results
-      debug:
+      ansible.builtin.debug:
         msg:
           - "================================================"
           - "  NetBox Deployment Verification Results"
           - "================================================"
           - ""
           - "Container Status:"
-          - "{{ containers.stdout_lines }}"
+          - "{{ verify_containers.stdout_lines }}"
           - ""
           - "Service Health:"
-          - "  PostgreSQL:   {{ pg_status.stdout | default('ERROR') }}"
-          - "  NetBox:       {{ nb_status.stdout | default('ERROR') }}"
-          - "  Nginx:        {{ nginx_status.stdout | default('ERROR') }}"
-          - "  Valkey:       {{ 'active (ping: ' + valkey_test.stdout + ')' if valkey_test.rc == 0 else 'ERROR' }}"
+          - "  PostgreSQL:   {{ verify_pg_status.stdout | default('ERROR') }}"
+          - "  NetBox:       {{ verify_nb_status.stdout | default('ERROR') }}"
+          - "  Nginx:        {{ verify_nginx_status.stdout | default('ERROR') }}"
+          - "  Valkey:       {{ 'active (ping: ' + verify_valkey_test.stdout + ')' if verify_valkey_test.rc == 0 else 'ERROR' }}"
           - ""
           - "Connectivity Tests:"
-          - "  Database:     {{ 'OK' if db_test.rc == 0 else 'FAILED' }}"
-          - "  Cache:        {{ 'OK' if valkey_test.rc == 0 else 'FAILED' }}"
-          - "  NetBox Port:  {{ 'OK' if netbox_port.rc == 0 else 'FAILED' }}"
-          - "  Nginx Ports:  {{ 'OK' if nginx_port.rc == 0 else 'FAILED' }}"
-          - "  HTTPS Web:    {{ 'OK (HTTP ' + (https_test.status|string) + ')' if https_test.status is defined else 'FAILED' }}"
+          - "  Database:     {{ 'OK' if verify_db_test.rc == 0 else 'FAILED' }}"
+          - "  Cache:        {{ 'OK' if verify_valkey_test.rc == 0 else 'FAILED' }}"
+          - "  NetBox Port:  {{ 'OK' if verify_netbox_port.rc == 0 else 'FAILED' }}"
+          - "  Nginx Ports:  {{ 'OK' if verify_nginx_port.rc == 0 else 'FAILED' }}"
+          - "  HTTPS Web:    {{ 'OK (HTTP ' + (verify_https_test.status | string) + ')' if verify_https_test.status is defined else 'FAILED' }}"
           - ""
-          - "Access URL: https://{{ proxy_ip.stdout }}"
+          - "Access URL: https://{{ verify_proxy_ip.stdout }}"
           - "Username: admin"
           - "Password: NetBox2024!"
           - ""
           - "================================================"
 
     - name: Set deployment status
-      set_fact:
-        all_services_up: "{{ pg_status.rc == 0 and nb_status.rc == 0 and nginx_status.rc == 0 }}"
-        all_tests_pass: "{{ db_test.rc == 0 and valkey_test.rc == 0 and netbox_port.rc == 0 and nginx_port.rc == 0 }}"
+      ansible.builtin.set_fact:
+        verify_all_services_up: "{{ verify_pg_status.rc == 0 and verify_nb_status.rc == 0 and verify_nginx_status.rc == 0 }}"
+        verify_all_tests_pass: "{{ verify_db_test.rc == 0 and verify_valkey_test.rc == 0 and verify_netbox_port.rc == 0 and verify_nginx_port.rc == 0 }}"
 
     - name: Final status
-      debug:
-        msg: "✅ DEPLOYMENT VERIFIED - All systems operational!" 
-      when: all_services_up and all_tests_pass
+      ansible.builtin.debug:
+        msg: "✅ DEPLOYMENT VERIFIED - All systems operational!"
+      when: verify_all_services_up and verify_all_tests_pass
 
     - name: Warning if issues detected
-      debug:
+      ansible.builtin.debug:
         msg: "⚠️  WARNING - Some services or tests failed. Review output above."
-      when: not (all_services_up and all_tests_pass)
+      when: not (verify_all_services_up and verify_all_tests_pass)

@@ -4,8 +4,8 @@
 
 - name: NetBox Greenfield Deployment
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -15,7 +15,7 @@
 
   tasks:
     - name: Display deployment banner
-      debug:
+      ansible.builtin.debug:
         msg:
           - "╔═══════════════════════════════════════════════════════════╗"
           - "║  NetBox Greenfield Deployment on Proxmox VE 9.0          ║"
@@ -33,8 +33,8 @@
 
 - name: Phase 1 - Infrastructure Setup
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -48,12 +48,12 @@
 
   post_tasks:
     - name: Display network status
-      shell: brctl show
+      ansible.builtin.shell: brctl show
       register: bridges
       changed_when: false
 
     - name: Show configured bridges
-      debug:
+      ansible.builtin.debug:
         msg: "{{ bridges.stdout_lines }}"
 
 # ==============================================================================
@@ -62,8 +62,8 @@
 
 - name: Phase 2 - Create Containers
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -73,16 +73,16 @@
 
   tasks:
     - name: Check if Debian template exists
-      stat:
+      ansible.builtin.stat:
         path: "/var/lib/vz/template/cache/{{ debian_template }}"
       register: template_check
 
     - name: Download Debian template
-      command: pveam download local {{ debian_template }}
+      ansible.builtin.command: pveam download local {{ debian_template }}
       when: not template_check.stat.exists
 
     - name: Create database container (CT 101)
-      include_role:
+      ansible.builtin.include_role:
         name: proxmox_container
       vars:
         container:
@@ -94,7 +94,7 @@
           disk: "{{ containers.database.disk }}"
 
     - name: Create cache container (CT 102)
-      include_role:
+      ansible.builtin.include_role:
         name: proxmox_container
       vars:
         container:
@@ -106,7 +106,7 @@
           disk: "{{ containers.cache.disk }}"
 
     - name: Create NetBox application container (CT 100)
-      include_role:
+      ansible.builtin.include_role:
         name: proxmox_container
       vars:
         container:
@@ -119,7 +119,7 @@
           disk: "{{ containers.application.disk }}"
 
     - name: Create proxy container (CT 103)
-      include_role:
+      ansible.builtin.include_role:
         name: proxmox_container
       vars:
         container:
@@ -131,12 +131,12 @@
           disk: "{{ containers.proxy.disk }}"
 
     - name: Display container status
-      command: pct list
+      ansible.builtin.command: pct list
       register: container_list
       changed_when: false
 
     - name: Show created containers
-      debug:
+      ansible.builtin.debug:
         msg: "{{ container_list.stdout_lines }}"
 
 # ==============================================================================
@@ -145,8 +145,8 @@
 
 - name: Phase 3 - Configure Database
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -156,13 +156,13 @@
 
   tasks:
     - name: Configure Debian base (Database)
-      include_role:
+      ansible.builtin.include_role:
         name: debian_base
       vars:
         container: "{{ containers.database }}"
 
     - name: Install and configure PostgreSQL
-      include_role:
+      ansible.builtin.include_role:
         name: postgresql
       vars:
         container: "{{ containers.database }}"
@@ -173,8 +173,8 @@
 
 - name: Phase 4 - Configure Cache
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -184,13 +184,13 @@
 
   tasks:
     - name: Configure Debian base (Cache)
-      include_role:
+      ansible.builtin.include_role:
         name: debian_base
       vars:
         container: "{{ containers.cache }}"
 
     - name: Install and configure Valkey
-      include_role:
+      ansible.builtin.include_role:
         name: valkey
       vars:
         container: "{{ containers.cache }}"
@@ -201,8 +201,8 @@
 
 - name: Phase 5 - Configure NetBox Application
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -212,13 +212,13 @@
 
   tasks:
     - name: Configure Debian base (NetBox)
-      include_role:
+      ansible.builtin.include_role:
         name: debian_base
       vars:
         container: "{{ containers.application }}"
 
     - name: Install and configure NetBox
-      include_role:
+      ansible.builtin.include_role:
         name: netbox_app
       vars:
         container: "{{ containers.application }}"
@@ -229,8 +229,8 @@
 
 - name: Phase 6 - Configure Nginx Proxy
   hosts: localhost
-  gather_facts: yes
-  become: yes
+  gather_facts: true
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -240,13 +240,13 @@
 
   tasks:
     - name: Configure Debian base (Proxy)
-      include_role:
+      ansible.builtin.include_role:
         name: debian_base
       vars:
         container: "{{ containers.proxy }}"
 
     - name: Install and configure Nginx
-      include_role:
+      ansible.builtin.include_role:
         name: nginx_proxy
       vars:
         container: "{{ containers.proxy }}"
@@ -258,7 +258,7 @@
 - name: Phase 7 - Verification
   hosts: localhost
   gather_facts: no
-  become: yes
+  become: true
 
   vars_files:
     - ../group_vars/all/network.yml
@@ -268,53 +268,53 @@
 
   tasks:
     - name: Wait for services to stabilize
-      wait_for:
+      ansible.builtin.wait_for:
         timeout: 15
 
     - name: Check PostgreSQL service
-      command: pct exec {{ containers.database.vmid }} -- systemctl is-active postgresql
+      ansible.builtin.command: pct exec {{ containers.database.vmid }} -- systemctl is-active postgresql
       register: pg_status
       changed_when: false
       failed_when: false
 
     - name: Check Valkey service
-      command: pct exec {{ containers.cache.vmid }} -- systemctl is-active valkey
+      ansible.builtin.command: pct exec {{ containers.cache.vmid }} -- systemctl is-active valkey
       register: valkey_status
       changed_when: false
       failed_when: false
 
     - name: Check NetBox service
-      command: pct exec {{ containers.application.vmid }} -- systemctl is-active netbox
+      ansible.builtin.command: pct exec {{ containers.application.vmid }} -- systemctl is-active netbox
       register: netbox_status
       changed_when: false
       failed_when: false
 
     - name: Check Nginx service
-      command: pct exec {{ containers.proxy.vmid }} -- systemctl is-active nginx
+      ansible.builtin.command: pct exec {{ containers.proxy.vmid }} -- systemctl is-active nginx
       register: nginx_status
       changed_when: false
       failed_when: false
 
     - name: Test database connectivity
-      command: pct exec {{ containers.application.vmid }} -- bash -c "PGPASSWORD='{{ vault_netbox_db_password }}' psql -h {{ containers.database.backend_ip }} -U netbox -d netbox -c 'SELECT 1;'"
+      ansible.builtin.command: pct exec {{ containers.application.vmid }} -- bash -c "PGPASSWORD='{{ vault_netbox_db_password }}' psql -h {{ containers.database.backend_ip }} -U netbox -d netbox -c 'SELECT 1;'"
       register: db_test
       changed_when: false
       failed_when: false
 
     - name: Test Valkey connectivity
-      command: pct exec {{ containers.cache.vmid }} -- valkey-cli ping
+      ansible.builtin.command: pct exec {{ containers.cache.vmid }} -- valkey-cli ping
       register: valkey_test
       changed_when: false
       failed_when: false
 
     - name: Get proxy external IP
-      shell: pct exec {{ containers.proxy.vmid }} -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+      ansible.builtin.shell: pct exec {{ containers.proxy.vmid }} -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
       register: proxy_ip
       changed_when: false
       failed_when: false
 
     - name: Test HTTPS endpoint
-      uri:
+      ansible.builtin.uri:
         url: "https://{{ proxy_ip.stdout }}"
         validate_certs: no
         status_code: [200, 301, 302]
@@ -322,7 +322,7 @@
       failed_when: false
 
     - name: Display deployment summary
-      debug:
+      ansible.builtin.debug:
         msg:
           - "╔═══════════════════════════════════════════════════════════╗"
           - "║          NetBox Deployment Complete!                     ║"

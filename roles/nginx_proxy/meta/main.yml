@@ -17,7 +17,7 @@ galaxy_info:
   galaxy_tags:
     - nginx
     - proxy
-    - reverse-proxy
+    - reverseproxy
     - ssl
     - netbox
     - container

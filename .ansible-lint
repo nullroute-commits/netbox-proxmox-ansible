@@ -3,8 +3,8 @@
 # https://ansible.readthedocs.io/projects/lint/configuring/
 # Version: 25.12.0+ compatible
 
-# Use the basic profile for initial adoption (production profile is target)
-profile: basic
+# Use the production profile for strict checking
+profile: production
 
 # Offline mode for air-gapped environments
 offline: true
@@ -22,15 +22,8 @@ skip_list:
   - yaml[line-length]
   # Allow flexibility in task name casing
   - name[casing]
-  # FQCN not yet adopted in this codebase (future work)
-  - fqcn[action-core]
-  - fqcn[action]
-  # Variable naming conventions not yet enforced (future work)
-  - var-naming[no-role-prefix]
   # Meta schema issues for Proxmox platform (not in official list)
   - schema[meta]
-  # Jinja template positioning (cosmetic)
-  - name[template]
 
 # Rules to warn about but not fail
 warn_list:
@@ -40,8 +33,6 @@ warn_list:
   - command-instead-of-module
   # Risky shell pipes may be necessary for complex operations
   - risky-shell-pipe
-  # Commands without changed_when (many pct commands)
-  - no-changed-when
 
 # Enable specific optional checks
 enable_list:

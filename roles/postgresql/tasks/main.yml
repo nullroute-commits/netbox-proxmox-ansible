@@ -2,62 +2,81 @@
 # roles/postgresql/tasks/main.yml
 
 - name: Install PostgreSQL {{ postgresql_version }}
-  command: pct exec {{ container.vmid }} -- apt install -y postgresql-{{ postgresql_version }} postgresql-client-{{ postgresql_version }}
-  register: pg_install
-  changed_when: "'0 newly installed' not in pg_install.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- apt install -y
+    postgresql-{{ postgresql_version }} postgresql-client-{{ postgresql_version }}
+  register: postgresql_install
+  changed_when: "'0 newly installed' not in postgresql_install.stdout"
 
 - name: Configure PostgreSQL to listen on all addresses
-  command: pct exec {{ container.vmid }} -- bash -c "sed -i \"s/#listen_addresses = 'localhost'/listen_addresses = '*'/g\" /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "sed -i \"s/#listen_addresses = 'localhost'/listen_addresses = '{{ postgresql_listen_addresses }}'/g\"
+    /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
   changed_when: false
 
 - name: Configure PostgreSQL max connections
-  command: pct exec {{ container.vmid }} -- bash -c "sed -i 's/max_connections = 100/max_connections = 200/g' /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "sed -i 's/max_connections = 100/max_connections = {{ postgresql_max_connections }}/g'
+    /etc/postgresql/{{ postgresql_version }}/main/postgresql.conf"
   changed_when: false
 
 - name: Add pg_hba.conf entry for NetBox
-  command: pct exec {{ container.vmid }} -- bash -c "echo 'host    all    all    {{ backend_network.cidr }}    md5' >> /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "echo 'host    all    all    {{ backend_network.cidr }}    {{ postgresql_auth_method }}'
+    >> /etc/postgresql/{{ postgresql_version }}/main/pg_hba.conf"
   changed_when: false
 
 - name: Restart PostgreSQL
-  command: pct exec {{ container.vmid }} -- systemctl restart postgresql
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart postgresql
   changed_when: false
 
 - name: Wait for PostgreSQL to be ready
-  command: pct exec {{ container.vmid }} -- pg_isready
-  register: pg_ready
-  until: pg_ready.rc == 0
+  ansible.builtin.command: pct exec {{ container.vmid }} -- pg_isready
+  register: postgresql_ready
+  until: postgresql_ready.rc == 0
   retries: 10
   delay: 2
   changed_when: false
 
 - name: Create NetBox database
-  command: pct exec {{ container.vmid }} -- sudo -u postgres psql -c "CREATE DATABASE netbox;"
-  register: db_create
-  changed_when: "'CREATE DATABASE' in db_create.stdout"
-  failed_when: 
-    - db_create.rc != 0
-    - "'already exists' not in db_create.stderr"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u postgres psql -c
+    "CREATE DATABASE {{ postgresql_netbox_database }};"
+  register: postgresql_db_create
+  changed_when: "'CREATE DATABASE' in postgresql_db_create.stdout"
+  failed_when:
+    - postgresql_db_create.rc != 0
+    - "'already exists' not in postgresql_db_create.stderr"
 
 - name: Create NetBox database user
-  command: pct exec {{ container.vmid }} -- sudo -u postgres psql -c "CREATE USER netbox WITH PASSWORD '{{ vault_netbox_db_password }}';"
-  register: user_create
-  changed_when: "'CREATE ROLE' in user_create.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u postgres psql -c
+    "CREATE USER {{ postgresql_netbox_user }} WITH PASSWORD '{{ vault_netbox_db_password }}';"
+  register: postgresql_user_create
+  changed_when: "'CREATE ROLE' in postgresql_user_create.stdout"
   failed_when:
-    - user_create.rc != 0
-    - "'already exists' not in user_create.stderr"
+    - postgresql_user_create.rc != 0
+    - "'already exists' not in postgresql_user_create.stderr"
 
 - name: Grant privileges to NetBox user
-  command: pct exec {{ container.vmid }} -- sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE netbox TO netbox;"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u postgres psql -c
+    "GRANT ALL PRIVILEGES ON DATABASE {{ postgresql_netbox_database }} TO {{ postgresql_netbox_user }};"
   changed_when: false
 
 - name: Grant schema privileges
-  command: pct exec {{ container.vmid }} -- sudo -u postgres psql -d netbox -c "GRANT ALL ON SCHEMA public TO netbox;"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- sudo -u postgres psql
+    -d {{ postgresql_netbox_database }} -c "GRANT ALL ON SCHEMA public TO {{ postgresql_netbox_user }};"
   changed_when: false
 
 - name: Display PostgreSQL status
-  debug:
+  ansible.builtin.debug:
     msg:
       - "PostgreSQL {{ postgresql_full_version }} installed and configured"
-      - "Database: netbox"
-      - "User: netbox"
-      - "Listening on: *:5432"
+      - "Database: {{ postgresql_netbox_database }}"
+      - "User: {{ postgresql_netbox_user }}"
+      - "Listening on: {{ postgresql_listen_addresses }}:{{ postgresql_port }}"

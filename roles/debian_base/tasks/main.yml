@@ -2,42 +2,41 @@
 # roles/debian_base/tasks/main.yml
 
 - name: Update apt cache
-  command: pct exec {{ container.vmid }} -- apt update
+  ansible.builtin.command: pct exec {{ container.vmid }} -- apt update
   changed_when: false
 
 - name: Install base packages
-  command: pct exec {{ container.vmid }} -- apt install -y {{ item }}
-  loop:
-    - curl
-    - wget
-    - gnupg
-    - ca-certificates
-    - locales
-    - apt-transport-https
-    - sudo
-    - vim
-  register: apt_install
-  changed_when: "'0 newly installed' not in apt_install.stdout"
+  ansible.builtin.command: pct exec {{ container.vmid }} -- apt install -y {{ item }}
+  loop: "{{ debian_base_packages }}"
+  register: debian_base_apt_install
+  changed_when: "'0 newly installed' not in debian_base_apt_install.stdout"
 
 - name: Generate locales
-  command: pct exec {{ container.vmid }} -- bash -c "echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "echo '{{ debian_base_locale }} UTF-8' > /etc/locale.gen && locale-gen"
   changed_when: false
 
 - name: Set timezone
-  command: pct exec {{ container.vmid }} -- ln -sf /usr/share/zoneinfo/UTC /etc/localtime
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- ln -sf /usr/share/zoneinfo/{{ debian_base_timezone }} /etc/localtime
   changed_when: false
   failed_when: false
 
 - name: Configure DNS
-  command: pct exec {{ container.vmid }} -- bash -c "echo 'nameserver 8.8.8.8' > /etc/resolv.conf"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "echo 'nameserver {{ debian_base_nameservers[0] }}' > /etc/resolv.conf"
   changed_when: false
 
 - name: Test internet connectivity
-  command: pct exec {{ container.vmid }} -- ping -c 2 8.8.8.8
-  register: ping_result
+  ansible.builtin.command: pct exec {{ container.vmid }} -- ping -c 2 8.8.8.8
+  register: debian_base_ping_result
   changed_when: false
   failed_when: false
+  when: debian_base_test_connectivity | default(true)
 
 - name: Display connectivity status
-  debug:
-    msg: "Internet connectivity: {{ 'OK' if ping_result.rc == 0 else 'FAILED' }}"
+  ansible.builtin.debug:
+    msg: "Internet connectivity: {{ 'OK' if debian_base_ping_result.rc == 0 else 'FAILED' }}"
+  when: debian_base_test_connectivity | default(true)
