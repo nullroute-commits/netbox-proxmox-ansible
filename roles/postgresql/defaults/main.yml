@@ -12,6 +12,10 @@ postgresql_packages:
   - "postgresql-client-{{ postgresql_version }}"
 
 # PostgreSQL server configuration
+# NOTE: Listen on all addresses is acceptable in this deployment because
+# PostgreSQL runs on an isolated backend network (10.100.0.0/24) with
+# pg_hba.conf restricting access to that subnet only.
+# For public-facing deployments, bind to specific interface IPs.
 postgresql_listen_addresses: "*"
 postgresql_max_connections: 200
 postgresql_port: 5432

@@ -22,6 +22,10 @@ netbox_app_gunicorn_workers: 4
 netbox_app_gunicorn_timeout: 120
 
 # NetBox allowed hosts
+# NOTE: Using '*' is acceptable in this deployment because NetBox is behind
+# an Nginx reverse proxy that handles host header validation. The proxy
+# only forwards requests to valid hosts.
+# For direct exposure or stricter security, specify actual hostnames/IPs.
 netbox_app_allowed_hosts:
   - "*"
 
