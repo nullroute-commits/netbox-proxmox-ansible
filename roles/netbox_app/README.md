@@ -27,6 +27,21 @@ Install and configure NetBox IPAM/DCIM application.
 | `netbox_app_superuser_email` | `admin@localhost` | Admin email |
 | `netbox_app_plugins` | See defaults | List of plugins to install |
 | `netbox_app_plugin_modules` | See defaults | Plugin module names |
+| `netbox_app_proxmox_plugin_enabled` | `true` | Enable Proxmox plugin |
+| `netbox_app_proxmox_import_config` | See defaults | Proxmox plugin settings |
+
+## Installed Plugins
+
+| Plugin | Version | Description |
+|--------|---------|-------------|
+| netbox-plugin-dns | 1.4.4 | DNS zone/record management |
+| netbox-secrets | 2.4.1 | Encrypted secret storage |
+| netbox-acls | 1.9.1 | Access control lists |
+| netbox-bgp | 0.17.0 | BGP peering management |
+| netbox-inventory | 2.4.1 | Enhanced inventory tracking |
+| netbox-floorplan-plugin | 0.8.0 | Datacenter floor planning |
+| netbox-reorder-rack | 1.1.4 | Rack device reordering |
+| netbox-proxmox-import | 1.1.2 | Proxmox VE integration |
 
 ## Handlers
 
@@ -53,10 +68,22 @@ Install and configure NetBox IPAM/DCIM application.
         vault_netbox_admin_password: "AdminPassword!"
 ```
 
+## Proxmox Integration
+
+The Proxmox plugin enables synchronization of Proxmox VE infrastructure:
+
+- Cluster discovery and import
+- VM and container synchronization
+- Storage resource tracking
+- Node device mapping
+
+See [docs/PROXMOX_INTEGRATION.md](../../docs/PROXMOX_INTEGRATION.md) for setup guide.
+
 ## Security Notes
 
 - `netbox_app_allowed_hosts: ["*"]` is safe when behind a reverse proxy
 - Store passwords in Ansible Vault
+- Use API tokens for Proxmox integration
 
 ## License
 

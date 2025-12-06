@@ -98,8 +98,11 @@ All plugins pinned to latest stable versions (December 2025):
 5. **netbox-inventory** (v2.4.1) - Enhanced inventory tracking
 6. **netbox-floorplan-plugin** (v0.8.0) - Datacenter floor planning
 7. **netbox-reorder-rack** (v1.1.4) - Rack device reordering
+8. **netbox-proxmox-import** (v1.1.2) - Proxmox VE integration
 
 See [VERSIONS.md](VERSIONS.md) for plugin repositories and compatibility information.
+
+See [docs/PROXMOX_INTEGRATION.md](docs/PROXMOX_INTEGRATION.md) for Proxmox plugin setup guide.
 
 ## Documentation
 

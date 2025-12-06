@@ -115,7 +115,11 @@
 
     PLUGINS = {{ netbox_app_plugin_modules | to_json }}
 
-    PLUGINS_CONFIG = {}
+    PLUGINS_CONFIG = {
+        "netbox_proxmox_import": {
+            "verify_ssl": {{ netbox_app_proxmox_import_config.verify_ssl | default(true) | ternary('True', 'False') }},
+        },
+    }
     EOF'
   changed_when: false
 

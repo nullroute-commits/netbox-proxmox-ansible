@@ -81,6 +81,7 @@ All plugins pinned to latest stable versions as of December 2025:
 | netbox-inventory | 2.4.1 | [GitHub](https://github.com/ArnesSI/netbox-inventory) |
 | netbox-floorplan-plugin | 0.8.0 | [GitHub](https://github.com/netbox-community/netbox-floorplan) |
 | netbox_reorder_rack | 1.1.4 | [GitHub](https://github.com/minitriga/netbox-reorder-rack) |
+| netbox-proxmox-import | 1.1.2 | [PyPI](https://pypi.org/project/netbox-proxmox-import/) |
 
 ## Ansible Dependencies
 

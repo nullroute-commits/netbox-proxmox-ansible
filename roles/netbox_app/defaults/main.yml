@@ -57,6 +57,7 @@ netbox_app_plugins:
   - "netbox-inventory==2.4.1"
   - "netbox-floorplan-plugin==0.8.0"
   - "netbox-reorder-rack==1.1.4"
+  - "netbox-proxmox-import==1.1.2"
 
 # Plugin module names for configuration.py
 netbox_app_plugin_modules:
@@ -67,6 +68,14 @@ netbox_app_plugin_modules:
   - "netbox_inventory"
   - "netbox_floorplan"
   - "netbox_reorder_rack"
+  - "netbox_proxmox_import"
+
+# NetBox-Proxmox-Import Plugin Configuration
+netbox_app_proxmox_plugin_enabled: true
+netbox_app_proxmox_import_config:
+  verify_ssl: true
+  sync_interval: 3600
+  read_only: false
 
 # Python build dependencies
 netbox_app_python_packages:
