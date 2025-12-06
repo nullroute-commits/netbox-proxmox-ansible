@@ -32,7 +32,7 @@
 - name: Disable protected mode
   ansible.builtin.command: >
     pct exec {{ container.vmid }} -- bash -c
-    "sed -i 's/protected-mode yes/protected-mode {{ 'yes' if valkey_protected_mode else 'no' }}/g' /etc/valkey/valkey.conf"
+    "sed -i 's/protected-mode yes/protected-mode {{ valkey_protected_mode | ternary('yes', 'no') }}/g' /etc/valkey/valkey.conf"
   changed_when: false
 
 - name: Remove locale-collate from config

@@ -316,7 +316,7 @@
     - name: Test HTTPS endpoint
       ansible.builtin.uri:
         url: "https://{{ proxy_ip.stdout }}"
-        validate_certs: no
+        validate_certs: false
         status_code: [200, 301, 302]
       register: https_test
       failed_when: false

@@ -53,7 +53,7 @@
 
         ssl_protocols {{ nginx_proxy_ssl_protocols }};
         ssl_ciphers {{ nginx_proxy_ssl_ciphers }};
-        ssl_prefer_server_ciphers {{ 'on' if nginx_proxy_ssl_prefer_server_ciphers else 'off' }};
+        ssl_prefer_server_ciphers {{ nginx_proxy_ssl_prefer_server_ciphers | ternary('on', 'off') }};
         ssl_session_cache {{ nginx_proxy_ssl_session_cache }};
         ssl_session_timeout {{ nginx_proxy_ssl_session_timeout }};
 
@@ -76,8 +76,8 @@
             proxy_send_timeout {{ nginx_proxy_send_timeout }};
             proxy_read_timeout {{ nginx_proxy_read_timeout }};
 
-            proxy_buffering {{ 'on' if nginx_proxy_buffering else 'off' }};
-            proxy_request_buffering {{ 'on' if nginx_proxy_request_buffering else 'off' }};
+            proxy_buffering {{ nginx_proxy_buffering | ternary('on', 'off') }};
+            proxy_request_buffering {{ nginx_proxy_request_buffering | ternary('on', 'off') }};
         }
 
         add_header X-Content-Type-Options nosniff;

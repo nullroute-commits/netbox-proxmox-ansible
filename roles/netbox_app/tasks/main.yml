@@ -100,14 +100,14 @@
             "PORT": {{ netbox_app_redis_port }},
             "PASSWORD": "{{ netbox_app_redis_password }}",
             "DATABASE": {{ netbox_app_redis_tasks_database }},
-            "SSL": {{ netbox_app_redis_ssl | string | capitalize }},
+            "SSL": {{ netbox_app_redis_ssl | ternary('True', 'False') }},
         },
         "caching": {
             "HOST": "{{ containers.cache.backend_ip }}",
             "PORT": {{ netbox_app_redis_port }},
             "PASSWORD": "{{ netbox_app_redis_password }}",
             "DATABASE": {{ netbox_app_redis_caching_database }},
-            "SSL": {{ netbox_app_redis_ssl | string | capitalize }},
+            "SSL": {{ netbox_app_redis_ssl | ternary('True', 'False') }},
         }
     }
 
