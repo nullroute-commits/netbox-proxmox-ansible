@@ -19,24 +19,27 @@ Automated deployment of NetBox IPAM/DCIM application on Proxmox VE 9.0 using LXC
 git clone <repo-url> /root/netbox-proxmox-ansible
 cd /root/netbox-proxmox-ansible
 
-# 2. Install Ansible
-apt install -y ansible
+# 2. Install Ansible (Python 3.10+ required)
+pip3 install ansible-core>=2.17.0
 
-# 3. Configure inventory
+# 3. Install required collections
+ansible-galaxy collection install -r requirements.yml
+
+# 4. Configure inventory
 cp inventory/production/hosts.yml.example inventory/production/hosts.yml
 vim inventory/production/hosts.yml
 
-# 4. Configure variables
+# 5. Configure variables
 cp group_vars/all/vault.yml.example group_vars/all/vault.yml
 vim group_vars/all/vault.yml
 
-# 5. Encrypt secrets
+# 6. Encrypt secrets
 ansible-vault encrypt group_vars/all/vault.yml
 
-# 6. Run deployment
-ansible-playbook site.yml --ask-vault-pass
+# 7. Run deployment
+ansible-playbook playbooks/site.yml --ask-vault-pass
 
-# 7. Access NetBox
+# 8. Access NetBox
 # Navigate to: https://<proxy-ip>/
 # Username: admin
 # Password: (from vault.yml)
@@ -113,6 +116,18 @@ Comprehensive documentation is available in the `docs/` directory:
 - 100GB storage (ZFS recommended)
 - Internet connectivity for package downloads
 - Root or sudo access to Proxmox host
+
+### Ansible Requirements
+
+| Component | Minimum | Recommended |
+|-----------|---------|-------------|
+| ansible-core | 2.17.0 | 2.20.0 |
+| Python (Control Node) | 3.10 | 3.12+ |
+| community.general | 12.1.0 | 12.1.0 |
+| ansible.posix | 2.1.0 | 2.1.0 |
+| community.proxmox | 1.4.0 | 1.4.0 |
+
+All collection versions are pinned in `requirements.yml` for reproducible deployments.
 
 ## Installation Steps
 
@@ -348,11 +363,13 @@ Contributions welcome! Please:
 ## Badges
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Ansible](https://img.shields.io/badge/ansible-%3E%3D2.14-blue.svg)
-![Python](https://img.shields.io/badge/python-3.13-blue.svg)
+![Ansible](https://img.shields.io/badge/ansible--core-%3E%3D2.17.0-blue.svg)
+![Ansible Recommended](https://img.shields.io/badge/ansible--core-2.20.0-brightgreen.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
 ![Proxmox](https://img.shields.io/badge/proxmox-9.0-orange.svg)
-![NetBox](https://img.shields.io/badge/netbox-latest-green.svg)
+![NetBox](https://img.shields.io/badge/netbox-v4.4.7-green.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-brightgreen.svg)
+![Lint](https://img.shields.io/badge/ansible--lint-25.12.0-success.svg)
 
 ## License
 

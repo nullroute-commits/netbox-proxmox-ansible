@@ -1,0 +1,29 @@
+---
+# Proxmox Network Role - Galaxy Metadata
+galaxy_info:
+  role_name: proxmox_network
+  author: NetBox Proxmox Team
+  description: Create and configure network bridges for Proxmox VE
+  company: ""
+  license: MIT
+  min_ansible_version: "2.17"
+
+  platforms:
+    - name: Proxmox
+      versions:
+        - "9"
+        - "8"
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+
+  galaxy_tags:
+    - proxmox
+    - network
+    - bridge
+    - nat
+    - firewall
+
+dependencies:
+  - role: proxmox_host

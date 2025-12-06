@@ -1,0 +1,32 @@
+---
+# Proxmox Network Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# Backend network configuration (Database/Cache)
+proxmox_network_backend:
+  name: "vmbr1"
+  cidr: "10.100.0.0/24"
+  gateway: "10.100.0.1"
+  comment: "Backend network (DB/Cache)"
+
+# DMZ network configuration (Application)
+proxmox_network_dmz:
+  name: "vmbr2"
+  cidr: "10.100.1.0/24"
+  gateway: "10.100.1.1"
+  comment: "DMZ network (Application)"
+
+# External network configuration
+proxmox_network_external:
+  name: "vmbr0"
+  comment: "External network (Internet)"
+
+# NAT configuration
+proxmox_network_nat_enabled: true
+proxmox_network_nat_networks:
+  - "10.100.0.0/24"
+  - "10.100.1.0/24"
+proxmox_network_nat_output_interface: "vmbr0"
+
+# IPTables rules file
+proxmox_network_iptables_rules: "/etc/iptables/rules.v4"

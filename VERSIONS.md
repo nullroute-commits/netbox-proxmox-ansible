@@ -84,12 +84,16 @@ All plugins pinned to latest stable versions as of December 2025:
 
 ## Ansible Dependencies
 
-| Component | Minimum Version | Recommended |
-|-----------|----------------|-------------|
-| Ansible Core | 2.14.0 | 2.16+ |
-| Python (Control) | 3.9 | 3.11+ |
-| community.general | 8.0.0 | Latest |
-| ansible.posix | 1.5.0 | Latest |
+| Component | Minimum Version | Recommended | EOL |
+|-----------|----------------|-------------|-----|
+| ansible-core | 2.17.0 | **2.20.0** | Nov 2026 |
+| Python (Control Node) | 3.10 | 3.12+ | Oct 2028 |
+| community.general | 12.1.0 | **12.1.0** | - |
+| ansible.posix | 2.1.0 | **2.1.0** | - |
+| community.proxmox | 1.4.0 | **1.4.0** | - |
+| ansible-lint | 25.12.0 | **25.12.0** | - |
+
+**Note:** All collection versions are pinned in `requirements.yml` for reproducible deployments.
 
 ## Container Template
 
@@ -127,6 +131,28 @@ All plugins pinned to latest stable versions as of December 2025:
 
 ## Recommended Version Pinning for Ansible
 
+### In requirements.yml
+
+```yaml
+---
+# Ansible Galaxy Requirements
+# Pinned to stable versions as of December 2025
+# Requires ansible-core >= 2.17.0
+
+collections:
+  # General purpose modules and plugins
+  - name: community.general
+    version: "==12.1.0"
+
+  # POSIX system modules (sysctl, authorized_key, etc.)
+  - name: ansible.posix
+    version: "==2.1.0"
+
+  # Proxmox VE management modules (replaces deprecated community.general.proxmox)
+  - name: community.proxmox
+    version: "==1.4.0"
+```
+
 ### In group_vars/all/versions.yml
 
 ```yaml
@@ -157,6 +183,22 @@ nginx_version: "1.26"  # Stable branch
 # Gunicorn
 gunicorn_version: "23.0.0"
 
+# Ansible Dependencies - Pinned versions
+ansible_core_version: "2.20.0"
+ansible_min_version: "2.17.0"
+
+# Ansible Collections - Pinned versions
+ansible_collections:
+  community_general:
+    name: "community.general"
+    version: "12.1.0"
+  ansible_posix:
+    name: "ansible.posix"
+    version: "2.1.0"
+  community_proxmox:
+    name: "community.proxmox"
+    version: "1.4.0"
+
 # Plugins (exact versions)
 netbox_plugins_versions:
   netbox_plugin_dns: "1.4.4"
@@ -173,11 +215,11 @@ netbox_plugins_versions:
 ```yaml
 ---
 # NetBox version configuration
-netbox_version: "{{ netbox_version | default('v4.4.7') }}"
-netbox_repository: "https://github.com/netbox-community/netbox.git"
+netbox_app_version: "{{ netbox_version | default('v4.4.7') }}"
+netbox_app_repository: "https://github.com/netbox-community/netbox.git"
 
 # Python packages with pinned versions
-netbox_python_packages:
+netbox_app_plugins:
   - "gunicorn==23.0.0"
   - "netbox-plugin-dns==1.4.4"
   - "netbox-secrets==2.4.1"

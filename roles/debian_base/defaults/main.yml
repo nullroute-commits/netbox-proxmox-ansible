@@ -1,0 +1,29 @@
+---
+# Debian Base Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# Base packages to install on all Debian containers
+debian_base_packages:
+  - curl
+  - wget
+  - gnupg
+  - ca-certificates
+  - locales
+  - apt-transport-https
+  - sudo
+  - vim
+
+# Locale configuration
+debian_base_locale: "en_US.UTF-8"
+debian_base_timezone: "UTC"
+
+# DNS configuration
+debian_base_nameservers:
+  - "8.8.8.8"
+  - "8.8.4.4"
+
+# Whether to test internet connectivity
+debian_base_test_connectivity: true
+
+# Container identification (set by playbook)
+# debian_base_vmid: 100

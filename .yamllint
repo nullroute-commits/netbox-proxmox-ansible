@@ -1,0 +1,117 @@
+---
+# YAML Lint Configuration
+# https://yamllint.readthedocs.io/en/stable/configuration.html
+
+extends: default
+
+yaml-files:
+  - '*.yaml'
+  - '*.yml'
+  - '.ansible-lint'
+  - '.yamllint'
+
+ignore: |
+  .git/
+  collections/
+  group_vars/all/vault.yml
+
+rules:
+  # Line length - allow longer lines for Ansible tasks
+  line-length:
+    max: 160
+    level: warning
+    allow-non-breakable-words: true
+    allow-non-breakable-inline-mappings: true
+
+  # Truthy values - Ansible commonly uses yes/no/true/false
+  truthy:
+    allowed-values: ['true', 'false', 'yes', 'no', 'True', 'False', 'Yes', 'No']
+    check-keys: false
+
+  # Indentation - standard 2-space indentation
+  indentation:
+    spaces: 2
+    indent-sequences: true
+    check-multi-line-strings: false
+
+  # Comments - require proper spacing
+  comments:
+    require-starting-space: true
+    min-spaces-from-content: 1
+
+  # Braces - allow single-line inline dicts
+  braces:
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+    min-spaces-inside-empty: 0
+    max-spaces-inside-empty: 0
+
+  # Brackets - allow single-line inline lists
+  brackets:
+    min-spaces-inside: 0
+    max-spaces-inside: 0
+    min-spaces-inside-empty: 0
+    max-spaces-inside-empty: 0
+
+  # Colons - standard key-value spacing
+  colons:
+    max-spaces-before: 0
+    max-spaces-after: 1
+
+  # Commas - standard spacing
+  commas:
+    max-spaces-before: 0
+    min-spaces-after: 1
+    max-spaces-after: 1
+
+  # Document start - require document start marker
+  document-start:
+    present: true
+
+  # Document end - don't require document end marker
+  document-end: disable
+
+  # Empty lines - limit consecutive empty lines
+  empty-lines:
+    max: 2
+    max-start: 0
+    max-end: 1
+
+  # Empty values - allow empty values (common in Ansible)
+  empty-values:
+    forbid-in-block-mappings: false
+    forbid-in-flow-mappings: false
+
+  # Hyphens - standard list spacing
+  hyphens:
+    max-spaces-after: 1
+
+  # Key duplicates - prevent duplicate keys
+  key-duplicates: enable
+
+  # Key ordering - don't enforce key ordering
+  key-ordering: disable
+
+  # New line at end of file - require newline
+  new-line-at-end-of-file: enable
+
+  # New lines - use Unix-style line endings
+  new-lines:
+    type: unix
+
+  # Octal values - allow octal values (common for permissions)
+  octal-values:
+    forbid-implicit-octal: false
+    forbid-explicit-octal: false
+
+  # Quoted strings - don't require specific quoting
+  quoted-strings:
+    quote-type: any
+    required: false
+
+  # Trailing spaces - disallow trailing whitespace
+  trailing-spaces: enable
+
+  # Float values - consistent float formatting
+  float-values:
+    require-numeral-before-decimal: true

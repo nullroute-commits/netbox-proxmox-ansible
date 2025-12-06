@@ -1,0 +1,27 @@
+---
+# NetBox Application Role - Galaxy Metadata
+galaxy_info:
+  role_name: netbox_app
+  author: NetBox Proxmox Team
+  description: Install and configure NetBox IPAM/DCIM application
+  company: ""
+  license: MIT
+  min_ansible_version: "2.17"
+
+  platforms:
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+
+  galaxy_tags:
+    - netbox
+    - ipam
+    - dcim
+    - django
+    - python
+    - container
+    - lxc
+
+dependencies:
+  - role: debian_base

@@ -71,10 +71,29 @@ netbox_plugins:
     version: "1.1.4"
     repository: "https://github.com/minitriga/netbox-reorder-rack"
 
-# Ansible Requirements
-ansible_min_version: "2.14.0"
-ansible_recommended_version: "2.16+"
-ansible_python_version: "3.9+"
+# Ansible Requirements - Pinned to stable releases (December 2025)
+ansible_core_version: "2.20.0"
+ansible_min_version: "2.17.0"
+ansible_recommended_version: "2.20.0"
+ansible_python_version: "3.10+"
+
+# Ansible Collections - Pinned versions
+ansible_collections:
+  community_general:
+    name: "community.general"
+    version: "12.1.0"
+    min_ansible_core: "2.17.0"
+  ansible_posix:
+    name: "ansible.posix"
+    version: "2.1.0"
+    min_ansible_core: "2.15.0"
+  community_proxmox:
+    name: "community.proxmox"
+    version: "1.4.0"
+    min_ansible_core: "2.17.0"
+
+# Ansible Lint Version
+ansible_lint_version: "25.12.0"
 
 # Python packages for NetBox (pinned versions)
 netbox_python_packages:
@@ -94,3 +113,5 @@ version_compatibility:
   netbox_valkey: "7.0+"
   postgresql_eol: "2029-11"
   python_eol: "2029-10"
+  ansible_core_2_20_eol: "2026-11"
+  ansible_core_2_17_eol: "2025-05"

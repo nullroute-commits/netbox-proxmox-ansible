@@ -1,0 +1,89 @@
+---
+# Ansible Lint Configuration
+# https://ansible.readthedocs.io/projects/lint/configuring/
+# Version: 25.12.0+ compatible
+
+# Use the production profile for strict checking
+profile: production
+
+# Offline mode for air-gapped environments
+offline: false
+
+# Paths to exclude from linting
+exclude_paths:
+  - .git/
+  - .github/
+  - group_vars/all/vault.yml
+  - collections/
+
+# Rules to skip (with justification)
+skip_list:
+  # Allow longer lines for readability in complex Jinja2 templates
+  - yaml[line-length]
+  # Allow flexibility in task name casing
+  - name[casing]
+
+# Rules to warn about but not fail
+warn_list:
+  # Shell module usage for pct commands (no Ansible module alternative)
+  - command-instead-of-shell
+  # Some operations require shell commands due to Proxmox pct interface
+  - command-instead-of-module
+  # Risky shell pipes may be necessary for complex operations
+  - risky-shell-pipe
+
+# Enable specific optional checks
+enable_list:
+  - args
+  - empty-string-compare
+  - no-log-password
+  - no-same-owner
+
+# Kinds configuration for file type detection
+kinds:
+  - playbook: "playbooks/*.yml"
+  - tasks: "roles/*/tasks/*.yml"
+  - handlers: "roles/*/handlers/*.yml"
+  - vars: "group_vars/**/*.yml"
+  - vars: "roles/*/vars/*.yml"
+  - vars: "roles/*/defaults/*.yml"
+  - meta: "roles/*/meta/*.yml"
+
+# Mock modules and roles for offline mode
+mock_modules: []
+mock_roles: []
+
+# Verbosity level
+verbosity: 1
+
+# Use progressive mode for CI
+progressive: false
+
+# Write output format
+format: auto
+
+# Strict mode (fail on any warning)
+strict: false
+
+# Parseable output for CI integration
+parseable: false
+
+# Quiet mode
+quiet: false
+
+# Loop variable prefix (prevent scope issues)
+loop_var_prefix: "^(__|{role}_)"
+
+# Variable naming pattern (enforce snake_case)
+var_naming_pattern: "^[a-z_][a-z0-9_]*$"
+
+# Use default rules from the specified tags
+use_default_rules: true
+
+# Tags for filtering rules
+tags: []
+skip_tags: []
+
+# Minimum Ansible version for compatibility checking
+# Matches our requirements.yml
+# Note: This ensures linting checks for ansible-core 2.17+ compatibility
