@@ -1,0 +1,95 @@
+---
+# roles/proxmox_container/tasks/main.yml
+
+- name: Check if container {{ container.vmid }} exists
+  shell: pct status {{ container.vmid }}
+  register: container_status
+  failed_when: false
+  changed_when: false
+
+- name: Create container {{ container.hostname }}
+  command: >
+    pct create {{ container.vmid }}
+    local:vztmpl/{{ debian_template }}
+    --hostname {{ container.hostname }}
+    --cores {{ container.cpu }}
+    --memory {{ container.memory }}
+    --swap {{ container.swap | default(512) }}
+    --rootfs local-zfs:{{ container.disk }}
+    --unprivileged 1
+    --features nesting=1
+    --onboot 1
+    --start 0
+    --password {{ vault_container_root_password }}
+    --ostype unmanaged
+  when: container_status.rc != 0
+
+- name: Configure network interfaces for {{ container.hostname }}
+  block:
+    - name: Add backend network interface (eth0)
+      command: >
+        pct set {{ container.vmid }}
+        --net0 name=eth0,bridge={{ backend_network.name }},ip={{ container.backend_ip }}/24,gw={{ backend_network.gateway }}
+      when: container.backend_ip is defined
+
+    - name: Add DMZ network interface (eth1)
+      command: >
+        pct set {{ container.vmid }}
+        --net1 name=eth1,bridge={{ dmz_network.name }},ip={{ container.dmz_ip }}/24,gw={{ dmz_network.gateway }}
+      when: container.dmz_ip is defined
+
+    - name: Add external network interface (eth0)
+      command: >
+        pct set {{ container.vmid }}
+        --net0 name=eth0,bridge={{ external_network.name }},ip=dhcp
+      when: 
+        - container.backend_ip is not defined
+        - container.dmz_ip is not defined
+  when: container_status.rc != 0
+
+- name: Start container {{ container.hostname }}
+  command: pct start {{ container.vmid }}
+  when: container_status.rc != 0
+
+- name: Wait for container to be ready
+  wait_for:
+    timeout: 30
+  when: container_status.rc != 0
+
+- name: Create network interfaces file for {{ container.hostname }}
+  shell: |
+    pct exec {{ container.vmid }} -- bash -c 'cat > /etc/network/interfaces << EOF
+    auto lo
+    iface lo inet loopback
+
+    {% if container.backend_ip is defined %}
+    auto eth0
+    iface eth0 inet static
+        address {{ container.backend_ip }}
+        netmask 255.255.255.0
+        gateway {{ backend_network.gateway }}
+    {% endif %}
+
+    {% if container.dmz_ip is defined %}
+    auto eth1
+    iface eth1 inet static
+        address {{ container.dmz_ip }}
+        netmask 255.255.255.0
+        {% if container.backend_ip is not defined %}
+        gateway {{ dmz_network.gateway }}
+        {% endif %}
+    {% endif %}
+    EOF'
+  when: container_status.rc != 0
+
+- name: Restart networking in {{ container.hostname }}
+  command: pct exec {{ container.vmid }} -- systemctl restart networking
+  when: container_status.rc != 0
+  failed_when: false
+
+- name: Display container info
+  debug:
+    msg:
+      - "Container {{ container.hostname }} ({{ container.vmid }}) configured"
+      - "Backend IP: {{ container.backend_ip | default('N/A') }}"
+      - "DMZ IP: {{ container.dmz_ip | default('N/A') }}"

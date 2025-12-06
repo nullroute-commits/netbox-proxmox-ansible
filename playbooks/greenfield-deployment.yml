@@ -1,0 +1,347 @@
+---
+# Complete greenfield NetBox deployment playbook
+# Deploys NetBox from scratch on Proxmox VE 9.0
+
+- name: NetBox Greenfield Deployment
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  tasks:
+    - name: Display deployment banner
+      debug:
+        msg:
+          - "╔═══════════════════════════════════════════════════════════╗"
+          - "║  NetBox Greenfield Deployment on Proxmox VE 9.0          ║"
+          - "╚═══════════════════════════════════════════════════════════╝"
+          - ""
+          - "NetBox:     {{ netbox_version }}"
+          - "PostgreSQL: {{ postgresql_full_version }}"
+          - "Valkey:     {{ valkey_version }}"
+          - "Python:     {{ python_full_version }}"
+          - "Nginx:      {{ nginx_full_version }}"
+
+# ==============================================================================
+# PHASE 1: Infrastructure Setup
+# ==============================================================================
+
+- name: Phase 1 - Infrastructure Setup
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  roles:
+    - role: proxmox_host
+    - role: proxmox_network
+
+  post_tasks:
+    - name: Display network status
+      shell: brctl show
+      register: bridges
+      changed_when: false
+
+    - name: Show configured bridges
+      debug:
+        msg: "{{ bridges.stdout_lines }}"
+
+# ==============================================================================
+# PHASE 2: Container Creation
+# ==============================================================================
+
+- name: Phase 2 - Create Containers
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  tasks:
+    - name: Check if Debian template exists
+      stat:
+        path: "/var/lib/vz/template/cache/{{ debian_template }}"
+      register: template_check
+
+    - name: Download Debian template
+      command: pveam download local {{ debian_template }}
+      when: not template_check.stat.exists
+
+    - name: Create database container (CT 101)
+      include_role:
+        name: proxmox_container
+      vars:
+        container:
+          vmid: "{{ containers.database.vmid }}"
+          hostname: "{{ containers.database.hostname }}"
+          backend_ip: "{{ containers.database.backend_ip }}"
+          cpu: "{{ containers.database.cpu }}"
+          memory: "{{ containers.database.memory }}"
+          disk: "{{ containers.database.disk }}"
+
+    - name: Create cache container (CT 102)
+      include_role:
+        name: proxmox_container
+      vars:
+        container:
+          vmid: "{{ containers.cache.vmid }}"
+          hostname: "{{ containers.cache.hostname }}"
+          backend_ip: "{{ containers.cache.backend_ip }}"
+          cpu: "{{ containers.cache.cpu }}"
+          memory: "{{ containers.cache.memory }}"
+          disk: "{{ containers.cache.disk }}"
+
+    - name: Create NetBox application container (CT 100)
+      include_role:
+        name: proxmox_container
+      vars:
+        container:
+          vmid: "{{ containers.application.vmid }}"
+          hostname: "{{ containers.application.hostname }}"
+          backend_ip: "{{ containers.application.backend_ip }}"
+          dmz_ip: "{{ containers.application.dmz_ip }}"
+          cpu: "{{ containers.application.cpu }}"
+          memory: "{{ containers.application.memory }}"
+          disk: "{{ containers.application.disk }}"
+
+    - name: Create proxy container (CT 103)
+      include_role:
+        name: proxmox_container
+      vars:
+        container:
+          vmid: "{{ containers.proxy.vmid }}"
+          hostname: "{{ containers.proxy.hostname }}"
+          dmz_ip: "{{ containers.proxy.dmz_ip }}"
+          cpu: "{{ containers.proxy.cpu }}"
+          memory: "{{ containers.proxy.memory }}"
+          disk: "{{ containers.proxy.disk }}"
+
+    - name: Display container status
+      command: pct list
+      register: container_list
+      changed_when: false
+
+    - name: Show created containers
+      debug:
+        msg: "{{ container_list.stdout_lines }}"
+
+# ==============================================================================
+# PHASE 3: Configure Database Container
+# ==============================================================================
+
+- name: Phase 3 - Configure Database
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  tasks:
+    - name: Configure Debian base (Database)
+      include_role:
+        name: debian_base
+      vars:
+        container: "{{ containers.database }}"
+
+    - name: Install and configure PostgreSQL
+      include_role:
+        name: postgresql
+      vars:
+        container: "{{ containers.database }}"
+
+# ==============================================================================
+# PHASE 4: Configure Cache Container
+# ==============================================================================
+
+- name: Phase 4 - Configure Cache
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  tasks:
+    - name: Configure Debian base (Cache)
+      include_role:
+        name: debian_base
+      vars:
+        container: "{{ containers.cache }}"
+
+    - name: Install and configure Valkey
+      include_role:
+        name: valkey
+      vars:
+        container: "{{ containers.cache }}"
+
+# ==============================================================================
+# PHASE 5: Configure NetBox Application Container
+# ==============================================================================
+
+- name: Phase 5 - Configure NetBox Application
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  tasks:
+    - name: Configure Debian base (NetBox)
+      include_role:
+        name: debian_base
+      vars:
+        container: "{{ containers.application }}"
+
+    - name: Install and configure NetBox
+      include_role:
+        name: netbox_app
+      vars:
+        container: "{{ containers.application }}"
+
+# ==============================================================================
+# PHASE 6: Configure Nginx Proxy Container
+# ==============================================================================
+
+- name: Phase 6 - Configure Nginx Proxy
+  hosts: localhost
+  gather_facts: yes
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  tasks:
+    - name: Configure Debian base (Proxy)
+      include_role:
+        name: debian_base
+      vars:
+        container: "{{ containers.proxy }}"
+
+    - name: Install and configure Nginx
+      include_role:
+        name: nginx_proxy
+      vars:
+        container: "{{ containers.proxy }}"
+
+# ==============================================================================
+# PHASE 7: Post-Deployment Verification
+# ==============================================================================
+
+- name: Phase 7 - Verification
+  hosts: localhost
+  gather_facts: no
+  become: yes
+
+  vars_files:
+    - ../group_vars/all/network.yml
+    - ../group_vars/all/containers.yml
+    - ../group_vars/all/versions.yml
+    - ../group_vars/all/vault.yml
+
+  tasks:
+    - name: Wait for services to stabilize
+      wait_for:
+        timeout: 15
+
+    - name: Check PostgreSQL service
+      command: pct exec {{ containers.database.vmid }} -- systemctl is-active postgresql
+      register: pg_status
+      changed_when: false
+      failed_when: false
+
+    - name: Check Valkey service
+      command: pct exec {{ containers.cache.vmid }} -- systemctl is-active valkey
+      register: valkey_status
+      changed_when: false
+      failed_when: false
+
+    - name: Check NetBox service
+      command: pct exec {{ containers.application.vmid }} -- systemctl is-active netbox
+      register: netbox_status
+      changed_when: false
+      failed_when: false
+
+    - name: Check Nginx service
+      command: pct exec {{ containers.proxy.vmid }} -- systemctl is-active nginx
+      register: nginx_status
+      changed_when: false
+      failed_when: false
+
+    - name: Test database connectivity
+      command: pct exec {{ containers.application.vmid }} -- bash -c "PGPASSWORD='{{ vault_netbox_db_password }}' psql -h {{ containers.database.backend_ip }} -U netbox -d netbox -c 'SELECT 1;'"
+      register: db_test
+      changed_when: false
+      failed_when: false
+
+    - name: Test Valkey connectivity
+      command: pct exec {{ containers.cache.vmid }} -- valkey-cli ping
+      register: valkey_test
+      changed_when: false
+      failed_when: false
+
+    - name: Get proxy external IP
+      shell: pct exec {{ containers.proxy.vmid }} -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+      register: proxy_ip
+      changed_when: false
+      failed_when: false
+
+    - name: Test HTTPS endpoint
+      uri:
+        url: "https://{{ proxy_ip.stdout }}"
+        validate_certs: no
+        status_code: [200, 301, 302]
+      register: https_test
+      failed_when: false
+
+    - name: Display deployment summary
+      debug:
+        msg:
+          - "╔═══════════════════════════════════════════════════════════╗"
+          - "║          NetBox Deployment Complete!                     ║"
+          - "╚═══════════════════════════════════════════════════════════╝"
+          - ""
+          - "Services Status:"
+          - "  PostgreSQL:  {{ pg_status.stdout | default('unknown') }}"
+          - "  Valkey:      {{ valkey_status.stdout | default('unknown') }}"
+          - "  NetBox:      {{ netbox_status.stdout | default('unknown') }}"
+          - "  Nginx:       {{ nginx_status.stdout | default('unknown') }}"
+          - ""
+          - "Connectivity Tests:"
+          - "  Database:    {{ 'OK' if db_test.rc == 0 else 'FAILED' }}"
+          - "  Cache:       {{ 'OK (PONG)' if valkey_test.stdout == 'PONG' else 'FAILED' }}"
+          - "  HTTPS Web:   {{ 'OK (HTTP ' + (https_test.status|string) + ')' if https_test.status is defined else 'FAILED' }}"
+          - ""
+          - "Access Information:"
+          - "  URL:         https://{{ proxy_ip.stdout }}"
+          - "  Username:    admin"
+          - "  Password:    {{ vault_netbox_admin_password }}"
+          - ""
+          - "╚═══════════════════════════════════════════════════════════╝"

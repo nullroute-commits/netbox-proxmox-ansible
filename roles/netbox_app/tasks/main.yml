@@ -1,0 +1,184 @@
+---
+# roles/netbox_app/tasks/main.yml
+
+- name: Install Python and dependencies
+  command: pct exec {{ container.vmid }} -- apt install -y python3 python3-pip python3-venv python3-dev build-essential libxml2-dev libxslt1-dev libffi-dev libpq-dev libssl-dev zlib1g-dev git
+  register: python_install
+  changed_when: "'0 newly installed' not in python_install.stdout"
+
+- name: Install PostgreSQL client
+  command: pct exec {{ container.vmid }} -- apt install -y postgresql-client-{{ postgresql_version }}
+  register: pg_client_install
+  changed_when: "'0 newly installed' not in pg_client_install.stdout"
+
+- name: Clone NetBox repository
+  command: pct exec {{ container.vmid }} -- bash -c "if [ ! -d /opt/netbox ]; then git clone --branch {{ netbox_version }} {{ netbox_repository }} /opt/netbox; fi"
+  register: git_clone
+  changed_when: "'Cloning' in git_clone.stderr"
+
+- name: Create NetBox system user
+  command: pct exec {{ container.vmid }} -- bash -c "id netbox || useradd --system --shell /bin/bash --home-dir /opt/netbox netbox"
+  changed_when: false
+  failed_when: false
+
+- name: Set NetBox directory ownership
+  command: pct exec {{ container.vmid }} -- chown -R netbox:netbox /opt/netbox
+  changed_when: false
+
+- name: Create Python virtual environment
+  command: pct exec {{ container.vmid }} -- sudo -u netbox python3 -m venv /opt/netbox/venv
+  args:
+    creates: /opt/netbox/venv
+  register: venv_create
+  changed_when: false
+  failed_when: false
+
+- name: Upgrade pip in virtual environment
+  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install --upgrade pip
+  changed_when: false
+
+- name: Install NetBox Python requirements
+  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install -r /opt/netbox/requirements.txt
+  register: pip_install
+  changed_when: "'Successfully installed' in pip_install.stdout"
+
+- name: Install Gunicorn
+  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install gunicorn=={{ gunicorn_version }}
+  register: gunicorn_install
+  changed_when: "'Successfully installed' in gunicorn_install.stdout"
+
+- name: Install NetBox plugins
+  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/pip install {{ item }}
+  loop: "{{ netbox_python_packages }}"
+  register: plugins_install
+  changed_when: "'Successfully installed' in plugins_install.stdout"
+
+- name: Generate secret key
+  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/python3 /opt/netbox/netbox/generate_secret_key.py
+  register: secret_key
+  changed_when: false
+
+- name: Create NetBox configuration
+  shell: |
+    pct exec {{ container.vmid }} -- sudo -u netbox bash -c 'cat > /opt/netbox/netbox/netbox/configuration.py << "EOF"
+    ALLOWED_HOSTS = ["*"]
+    
+    DATABASE = {
+        "NAME": "netbox",
+        "USER": "netbox",
+        "PASSWORD": "{{ vault_netbox_db_password }}",
+        "HOST": "{{ containers.database.backend_ip }}",
+        "PORT": "",
+        "CONN_MAX_AGE": 300,
+    }
+    
+    REDIS = {
+        "tasks": {
+            "HOST": "{{ containers.cache.backend_ip }}",
+            "PORT": 6379,
+            "PASSWORD": "",
+            "DATABASE": 0,
+            "SSL": False,
+        },
+        "caching": {
+            "HOST": "{{ containers.cache.backend_ip }}",
+            "PORT": 6379,
+            "PASSWORD": "",
+            "DATABASE": 1,
+            "SSL": False,
+        }
+    }
+    
+    SECRET_KEY = "{{ secret_key.stdout }}"
+    
+    PLUGINS = [
+        "netbox_dns",
+        "netbox_secrets",
+        "netbox_acls",
+        "netbox_bgp",
+        "netbox_inventory",
+        "netbox_floorplan",
+        "netbox_reorder_rack",
+    ]
+    
+    PLUGINS_CONFIG = {}
+    EOF'
+  changed_when: false
+
+- name: Run database migrations
+  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/python3 /opt/netbox/netbox/manage.py migrate
+  register: migrate
+  changed_when: "'Applying' in migrate.stdout"
+
+- name: Create NetBox superuser
+  command: pct exec {{ container.vmid }} -- sudo -u netbox bash -c "DJANGO_SUPERUSER_PASSWORD='{{ vault_netbox_admin_password }}' /opt/netbox/venv/bin/python3 /opt/netbox/netbox/manage.py createsuperuser --noinput --username admin --email admin@localhost"
+  register: superuser
+  changed_when: "'Superuser created successfully' in superuser.stdout"
+  failed_when:
+    - superuser.rc != 0
+    - "'already exists' not in superuser.stderr"
+
+- name: Collect static files
+  command: pct exec {{ container.vmid }} -- sudo -u netbox /opt/netbox/venv/bin/python3 /opt/netbox/netbox/manage.py collectstatic --noinput
+  changed_when: false
+
+- name: Create Gunicorn configuration
+  shell: |
+    pct exec {{ container.vmid }} -- bash -c 'cat > /opt/netbox/gunicorn.py << "EOF"
+    command = "/opt/netbox/venv/bin/gunicorn"
+    pythonpath = "/opt/netbox/netbox"
+    bind = "0.0.0.0:8000"
+    workers = 4
+    user = "netbox"
+    EOF'
+  changed_when: false
+
+- name: Create NetBox systemd service
+  shell: |
+    pct exec {{ container.vmid }} -- bash -c 'cat > /etc/systemd/system/netbox.service << "EOF"
+    [Unit]
+    Description=NetBox WSGI Service
+    Documentation=https://docs.netbox.dev/
+    After=network-online.target
+    Wants=network-online.target
+    
+    [Service]
+    Type=simple
+    User=netbox
+    Group=netbox
+    WorkingDirectory=/opt/netbox/netbox
+    Environment="PATH=/opt/netbox/venv/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+    ExecStart=/opt/netbox/venv/bin/gunicorn --pid /var/tmp/netbox.pid --pythonpath /opt/netbox/netbox --config /opt/netbox/gunicorn.py netbox.wsgi
+    Restart=on-failure
+    RestartSec=30
+    PrivateTmp=true
+    
+    [Install]
+    WantedBy=multi-user.target
+    EOF'
+  changed_when: false
+
+- name: Reload systemd
+  command: pct exec {{ container.vmid }} -- systemctl daemon-reload
+  changed_when: false
+
+- name: Enable and start NetBox service
+  command: pct exec {{ container.vmid }} -- systemctl enable --now netbox
+  changed_when: false
+
+- name: Wait for NetBox to be ready
+  command: pct exec {{ container.vmid }} -- bash -c "curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/"
+  register: netbox_check
+  until: netbox_check.stdout == "200"
+  retries: 30
+  delay: 5
+  changed_when: false
+
+- name: Display NetBox status
+  debug:
+    msg:
+      - "NetBox {{ netbox_version }} installed and running"
+      - "Listening on: 0.0.0.0:8000"
+      - "Admin user: admin"
+      - "Plugins installed: 7"
+      - "HTTP Status: {{ netbox_check.stdout }}"

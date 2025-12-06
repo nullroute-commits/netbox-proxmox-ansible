@@ -2,55 +2,106 @@
 # roles/nginx_proxy/tasks/main.yml
 
 - name: Install Nginx and OpenSSL
-  apt:
-    name:
-      - nginx
-      - openssl
-    state: present
-    update_cache: yes
+  command: pct exec {{ container.vmid }} -- apt install -y nginx openssl
+  register: nginx_install
+  changed_when: "'0 newly installed' not in nginx_install.stdout"
 
 - name: Create SSL directory
-  file:
-    path: /etc/nginx/ssl
-    state: directory
-    mode: '0755'
+  command: pct exec {{ container.vmid }} -- mkdir -p /etc/nginx/ssl
+  changed_when: false
 
 - name: Generate self-signed SSL certificate
   command: >
-    openssl req -x509 -nodes -days 365 -newkey rsa:4096
+    pct exec {{ container.vmid }} -- openssl req -x509 -nodes -days 365 -newkey rsa:4096
     -keyout /etc/nginx/ssl/netbox.key
     -out /etc/nginx/ssl/netbox.crt
-    -subj "/C={{ vault_ssl_country }}/ST={{ vault_ssl_state }}/L={{ vault_ssl_city }}/O={{ vault_ssl_organization }}/CN={{ vault_ssl_common_name }}"
+    -subj "/C=US/ST=State/L=City/O=Organization/CN=netbox.local"
   args:
     creates: /etc/nginx/ssl/netbox.crt
+  changed_when: false
+  failed_when: false
 
 - name: Set permissions on SSL key
-  file:
-    path: /etc/nginx/ssl/netbox.key
-    mode: '0600'
+  command: pct exec {{ container.vmid }} -- chmod 600 /etc/nginx/ssl/netbox.key
+  changed_when: false
 
 - name: Template Nginx configuration
-  template:
-    src: netbox.conf.j2
-    dest: /etc/nginx/sites-available/netbox
-    mode: '0644'
-  notify: restart nginx
+  shell: |
+    pct exec {{ container.vmid }} -- bash -c 'cat > /etc/nginx/sites-available/netbox << "EOF"
+    upstream netbox {
+        server {{ containers.application.dmz_ip }}:8000;
+    }
+
+    server {
+        listen 80;
+        server_name _;
+        return 301 https://$host$request_uri;
+    }
+
+    server {
+        listen 443 ssl;
+        listen [::]:443 ssl;
+        http2 on;
+        
+        server_name _;
+
+        ssl_certificate /etc/nginx/ssl/netbox.crt;
+        ssl_certificate_key /etc/nginx/ssl/netbox.key;
+        
+        ssl_protocols TLSv1.2 TLSv1.3;
+        ssl_ciphers HIGH:!aNULL:!MD5;
+        ssl_prefer_server_ciphers on;
+        ssl_session_cache shared:SSL:10m;
+        ssl_session_timeout 10m;
+
+        client_max_body_size 25m;
+
+        location /static/ {
+            proxy_pass http://netbox/static/;
+            proxy_set_header Host $http_host;
+        }
+
+        location / {
+            proxy_pass http://netbox;
+            proxy_set_header Host $http_host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto $scheme;
+            proxy_set_header X-Forwarded-Host $http_host;
+            
+            proxy_connect_timeout 300s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+            
+            proxy_buffering off;
+            proxy_request_buffering off;
+        }
+
+        add_header X-Content-Type-Options nosniff;
+        add_header X-Frame-Options SAMEORIGIN;
+        add_header X-XSS-Protection "1; mode=block";
+    }
+    EOF'
+  changed_when: false
 
 - name: Enable NetBox site
-  file:
-    src: /etc/nginx/sites-available/netbox
-    dest: /etc/nginx/sites-enabled/netbox
-    state: link
-  notify: restart nginx
+  command: pct exec {{ container.vmid }} -- ln -sf /etc/nginx/sites-available/netbox /etc/nginx/sites-enabled/netbox
+  changed_when: false
+  failed_when: false
 
 - name: Disable default site
-  file:
-    path: /etc/nginx/sites-enabled/default
-    state: absent
-  notify: restart nginx
+  command: pct exec {{ container.vmid }} -- rm -f /etc/nginx/sites-enabled/default
+  changed_when: false
+  failed_when: false
 
-- name: Ensure Nginx is started and enabled
-  systemd:
-    name: nginx
-    state: started
-    enabled: yes
+- name: Test Nginx configuration
+  command: pct exec {{ container.vmid }} -- nginx -t
+  changed_when: false
+
+- name: Restart Nginx
+  command: pct exec {{ container.vmid }} -- systemctl restart nginx
+  changed_when: false
+
+- name: Enable Nginx service
+  command: pct exec {{ container.vmid }} -- systemctl enable nginx
+  changed_when: false
