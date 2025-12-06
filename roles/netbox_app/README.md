@@ -27,8 +27,8 @@ Install and configure NetBox IPAM/DCIM application.
 | `netbox_app_superuser_email` | `admin@localhost` | Admin email |
 | `netbox_app_plugins` | See defaults | List of plugins to install |
 | `netbox_app_plugin_modules` | See defaults | Plugin module names |
-| `netbox_app_proxmox_plugin_enabled` | `true` | Enable Proxmox plugin |
-| `netbox_app_proxmox_import_config` | See defaults | Proxmox plugin settings |
+| `netbox_app_proxbox_plugin_enabled` | `true` | Enable Proxbox plugin |
+| `netbox_app_proxbox_config` | See defaults | Proxbox plugin settings |
 
 ## Installed Plugins
 
@@ -41,7 +41,7 @@ Install and configure NetBox IPAM/DCIM application.
 | netbox-inventory | 2.4.1 | Enhanced inventory tracking |
 | netbox-floorplan-plugin | 0.8.0 | Datacenter floor planning |
 | netbox-reorder-rack | 1.1.4 | Rack device reordering |
-| netbox-proxmox-import | 1.1.2 | Proxmox VE integration |
+| netbox-proxbox | 0.0.6b2.post1 | Proxmox VE integration |
 
 ## Handlers
 
@@ -68,9 +68,9 @@ Install and configure NetBox IPAM/DCIM application.
         vault_netbox_admin_password: "AdminPassword!"
 ```
 
-## Proxmox Integration
+## Proxmox Integration (Proxbox)
 
-The Proxmox plugin enables synchronization of Proxmox VE infrastructure:
+The Proxbox plugin enables synchronization of Proxmox VE infrastructure:
 
 - Cluster discovery and import
 - VM and container synchronization

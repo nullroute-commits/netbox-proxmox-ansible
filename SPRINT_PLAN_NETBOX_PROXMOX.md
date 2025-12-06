@@ -61,19 +61,19 @@ The repository deploys NetBox in a three-tier containerized architecture on Prox
 
 | Plugin | Version | Compatibility | Features | Recommendation |
 |--------|---------|---------------|----------|----------------|
-| `netbox-proxmox-import` | 1.1.2 | NetBox 4.2+ | Import/sync, UI management | **Recommended** |
+| `netbox-proxbox` | 0.0.6b2.post1 | NetBox 4.2.6+ | Full sync, UI management | **Selected** |
 | `netbox-proxbox-stable` | 0.0.6 | NetBox 4.1.6+ | Conservative, stable | Alternative |
-| `netbox-proxbox` | 0.0.6b2 | NetBox 4.x | Beta, more features | Development |
+| `netbox-proxmox-import` | 1.1.2 | NetBox 4.2+ | Import/sync | Alternative |
 | `netbox-proxmox-automation` | 2025.11.02 | NetBox 4.x | Event-driven automation | Add-on |
 
-**Selected Plugin:** `netbox-proxmox-import==1.1.2`
+**Selected Plugin:** `netbox-proxbox==0.0.6b2.post1`
 
 **Rationale:**
-- Stable release (not beta)
-- Active maintenance (July 2025 release)
-- Full NetBox 4.x compatibility
-- Clean import/sync workflow with UI
-- Read-only option for safe operation
+- Latest version for NetBox 4.x and Proxmox 8.x
+- Active maintenance by netdevopsbr
+- Full NetBox 4.4.7 compatibility
+- Comprehensive sync workflow with UI
+- Well-documented project
 
 ---
 
@@ -102,7 +102,7 @@ netbox_app_plugins:
   - "netbox-inventory==2.4.1"
   - "netbox-floorplan-plugin==0.8.0"
   - "netbox-reorder-rack==1.1.4"
-  - "netbox-proxmox-import==1.1.2"  # NEW: Proxmox integration
+  - "netbox-proxbox==0.0.6b2.post1"  # NEW: Proxmox integration
 
 # Plugin module names for configuration.py (updated)
 netbox_app_plugin_modules:
@@ -113,7 +113,7 @@ netbox_app_plugin_modules:
   - "netbox_inventory"
   - "netbox_floorplan"
   - "netbox_reorder_rack"
-  - "netbox_proxmox_import"  # NEW: Proxmox integration
+  - "netbox_proxbox"  # NEW: Proxmox integration
 ```
 
 #### Story 1.2: Add Plugin Configuration Variables ✅
@@ -128,25 +128,13 @@ netbox_app_plugin_modules:
 ```yaml
 # roles/netbox_app/defaults/main.yml additions
 
-# NetBox-Proxmox-Import Plugin Configuration
-netbox_app_proxmox_plugin_enabled: true
-netbox_app_proxmox_clusters: []
-# Example cluster configuration:
-#   - name: "primary-cluster"
-#     host: "proxmox.example.com"
-#     port: 8006
-#     user: "netbox@pve"
-#     # password: Set via vault as vault_proxmox_api_password
-#     verify_ssl: true
-#     sync_vms: true
-#     sync_containers: true
-#     sync_storage: true
-
-# Plugin-specific settings
-netbox_app_proxmox_import_config:
-  verify_ssl: true
-  sync_interval: 3600  # seconds
-  read_only: false     # Set to true for import-only mode
+# NetBox-Proxbox Plugin Configuration
+netbox_app_proxbox_plugin_enabled: true
+netbox_app_proxbox_config:
+  # Proxmox connection settings (configured via NetBox UI after deployment)
+  default_settings:
+    verify_ssl: true
+    timeout: 30
 ```
 
 ---
@@ -156,7 +144,7 @@ netbox_app_proxmox_import_config:
 #### Story 2.1: Update NetBox Configuration Template ✅
 
 **Acceptance Criteria:**
-- [x] Add PLUGINS_CONFIG section for netbox_proxmox_import
+- [x] Add PLUGINS_CONFIG section for netbox_proxbox
 - [x] Support conditional configuration based on clusters defined
 - [x] Handle secrets securely via Ansible Vault
 
@@ -167,11 +155,7 @@ Update `roles/netbox_app/tasks/main.yml` configuration template:
 ```python
 # In configuration.py (PLUGINS_CONFIG section)
 PLUGINS_CONFIG = {
-    {% if netbox_app_proxmox_plugin_enabled %}
-    "netbox_proxmox_import": {
-        "verify_ssl": {{ netbox_app_proxmox_import_config.verify_ssl | default(true) | ternary('True', 'False') }},
-    },
-    {% endif %}
+    "netbox_proxbox": {},
 }
 ```
 
@@ -271,7 +255,7 @@ pveum passwd netbox@pve
 | netbox-inventory | 2.4.1 | GitHub |
 | netbox-floorplan-plugin | 0.8.0 | GitHub |
 | netbox_reorder_rack | 1.1.4 | GitHub |
-| **netbox-proxmox-import** | **1.1.2** | **PyPI** | # NEW
+| **netbox-proxbox** | **0.0.6b2.post1** | **GitHub** | # NEW
 ```
 
 #### Story 4.2: Update README.md ✅
@@ -295,7 +279,7 @@ All plugins pinned to latest stable versions (December 2025):
 5. **netbox-inventory** (v2.4.1) - Enhanced inventory tracking
 6. **netbox-floorplan-plugin** (v0.8.0) - Datacenter floor planning
 7. **netbox-reorder-rack** (v1.1.4) - Rack device reordering
-8. **netbox-proxmox-import** (v1.1.2) - Proxmox VE integration  # NEW
+8. **netbox-proxbox** (v0.0.6b2.post1) - Proxmox VE integration  # NEW
 ```
 
 #### Story 4.3: Create Proxmox Integration Guide ✅
@@ -446,16 +430,17 @@ All sprint workloads have been implemented:
 
 ## Version Reference
 
-### netbox-proxmox-import 1.1.2
+### netbox-proxbox 0.0.6b2.post1
 
-- **Release Date:** July 3, 2025
-- **Compatibility:** NetBox 4.2+
+- **Release Date:** April 2025
+- **Compatibility:** NetBox 4.2.6+, Proxmox 8.3+
+- **Repository:** https://github.com/netdevopsbr/netbox-proxbox
 - **Features:**
   - Cluster discovery and import
   - VM and container synchronization
   - Storage resource tracking
   - UI management interface
-  - Read-only operation mode
+  - Full Proxmox 8.x/9.x support
 
 ### Dependencies
 

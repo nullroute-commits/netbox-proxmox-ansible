@@ -57,7 +57,7 @@ netbox_app_plugins:
   - "netbox-inventory==2.4.1"
   - "netbox-floorplan-plugin==0.8.0"
   - "netbox-reorder-rack==1.1.4"
-  - "netbox-proxmox-import==1.1.2"
+  - "netbox-proxbox==0.0.6b2.post1"
 
 # Plugin module names for configuration.py
 netbox_app_plugin_modules:
@@ -68,14 +68,16 @@ netbox_app_plugin_modules:
   - "netbox_inventory"
   - "netbox_floorplan"
   - "netbox_reorder_rack"
-  - "netbox_proxmox_import"
+  - "netbox_proxbox"
 
-# NetBox-Proxmox-Import Plugin Configuration
-netbox_app_proxmox_plugin_enabled: true
-netbox_app_proxmox_import_config:
-  verify_ssl: true
-  sync_interval: 3600
-  read_only: false
+# NetBox-Proxbox Plugin Configuration
+netbox_app_proxbox_plugin_enabled: true
+netbox_app_proxbox_config:
+  # Proxmox connection settings (configured via NetBox UI after deployment)
+  # These are documented defaults - actual configuration done in NetBox admin
+  default_settings:
+    verify_ssl: true
+    timeout: 30
 
 # Python build dependencies
 netbox_app_python_packages:

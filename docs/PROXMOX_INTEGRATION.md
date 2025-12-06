@@ -1,10 +1,10 @@
-# Proxmox VE Integration Guide
+# Proxmox VE Integration Guide (Proxbox)
 
-This guide covers the setup and configuration of the NetBox-Proxmox integration plugin, which enables automatic synchronization of Proxmox VE infrastructure data with NetBox.
+This guide covers the setup and configuration of the NetBox-Proxbox integration plugin, which enables automatic synchronization of Proxmox VE infrastructure data with NetBox.
 
 ## Overview
 
-The `netbox-proxmox-import` plugin (v1.1.2) provides:
+The `netbox-proxbox` plugin (v0.0.6b2.post1) by netdevopsbr provides:
 
 - **Cluster Discovery**: Automatic discovery of Proxmox clusters
 - **Node Synchronization**: Import Proxmox nodes as NetBox devices
@@ -17,13 +17,13 @@ The `netbox-proxmox-import` plugin (v1.1.2) provides:
 
 ### Proxmox VE Requirements
 
-- Proxmox VE 8.x or 9.x
+- Proxmox VE 8.3 or later (8.x/9.x)
 - API access enabled (default port 8006)
 - Dedicated API user with appropriate permissions
 
 ### NetBox Requirements
 
-- NetBox 4.2 or later (4.4.7 recommended)
+- NetBox 4.2.6 or later (4.4.7 recommended)
 - Plugin installed and enabled
 - Network access to Proxmox API
 
@@ -39,7 +39,7 @@ ssh root@proxmox-host
 pveum role add NetBoxSync -privs "VM.Audit,VM.Monitor,Datastore.Audit,SDN.Audit,Sys.Audit,Pool.Audit"
 
 # Create dedicated user
-pveum user add netbox@pve -comment "NetBox Integration User"
+pveum user add netbox@pve -comment "NetBox Proxbox Integration User"
 
 # Assign role to user at datacenter level
 pveum acl modify / -user netbox@pve -role NetBoxSync
@@ -53,7 +53,7 @@ pveum passwd netbox@pve
 
 ```bash
 # Create user first (if not exists)
-pveum user add netbox@pve -comment "NetBox Integration User"
+pveum user add netbox@pve -comment "NetBox Proxbox Integration User"
 
 # Create API token
 pveum user token add netbox@pve netbox-token -privsep=0
@@ -84,13 +84,13 @@ The plugin is configured via Ansible variables in `roles/netbox_app/defaults/mai
 
 ```yaml
 # Enable/disable the plugin
-netbox_app_proxmox_plugin_enabled: true
+netbox_app_proxbox_plugin_enabled: true
 
-# Plugin configuration
-netbox_app_proxmox_import_config:
-  verify_ssl: true      # Verify Proxmox SSL certificate
-  sync_interval: 3600   # Sync interval in seconds (1 hour)
-  read_only: false      # Set true for import-only mode
+# Plugin configuration (Proxbox settings are configured via NetBox UI)
+netbox_app_proxbox_config:
+  default_settings:
+    verify_ssl: true
+    timeout: 30
 ```
 
 ### Vault Credentials
@@ -165,9 +165,9 @@ After deployment, configure the Proxmox connection in NetBox:
 
 1. **Log in to NetBox** as admin user
 
-2. **Navigate to Plugins** → **Proxmox Import**
+2. **Navigate to Plugins** → **Proxbox**
 
-3. **Add Cluster Connection**:
+3. **Add Proxmox Cluster**:
    - Name: `primary-cluster`
    - Host: `10.100.0.1` (or your Proxmox host IP)
    - Port: `8006`
@@ -200,12 +200,7 @@ After deployment, configure the Proxmox connection in NetBox:
 
 ### Scheduling Syncs
 
-Configure automated synchronization:
-
-```bash
-# Add cron job for hourly sync
-pct exec 100 -- bash -c 'echo "0 * * * * netbox /opt/netbox/venv/bin/python /opt/netbox/netbox/manage.py proxmox_sync" | crontab -u netbox -'
-```
+Configure automated synchronization via the Proxbox plugin UI or using NetBox scheduled jobs.
 
 ## Troubleshooting
 
@@ -248,13 +243,13 @@ Error: authentication failure (401)
 ### Plugin Not Loading
 
 ```
-Error: No module named 'netbox_proxmox_import'
+Error: No module named 'netbox_proxbox'
 ```
 
 **Solutions:**
 1. Verify plugin installation:
    ```bash
-   pct exec 100 -- bash -c "source /opt/netbox/venv/bin/activate && pip list | grep proxmox"
+   pct exec 100 -- bash -c "source /opt/netbox/venv/bin/activate && pip list | grep proxbox"
    ```
 2. Run migrations:
    ```bash
@@ -307,7 +302,7 @@ pct exec 100 -- journalctl -u netbox -f
 
 # Or manually update:
 pct exec 100 -- bash -c "source /opt/netbox/venv/bin/activate && \
-  pip install --upgrade netbox-proxmox-import==X.Y.Z"
+  pip install --upgrade netbox-proxbox==X.Y.Z"
 
 # Restart NetBox
 pct exec 100 -- systemctl restart netbox
@@ -317,10 +312,10 @@ pct exec 100 -- systemctl restart netbox
 
 ```bash
 # View sync logs
-pct exec 100 -- journalctl -u netbox | grep -i proxmox
+pct exec 100 -- journalctl -u netbox | grep -i proxbox
 
 # Check last sync time in NetBox UI
-# Navigate to Plugins → Proxmox Import → Sync Status
+# Navigate to Plugins → Proxbox → Sync Status
 ```
 
 ### Clearing Sync Data
@@ -333,6 +328,6 @@ If you need to re-sync from scratch:
 
 ---
 
-**Document Version:** 1.0
+**Document Version:** 1.1
 **Last Updated:** December 2025
-**Plugin Version:** netbox-proxmox-import 1.1.2
+**Plugin Version:** netbox-proxbox 0.0.6b2.post1

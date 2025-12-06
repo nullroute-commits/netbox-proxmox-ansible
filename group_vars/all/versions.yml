@@ -71,10 +71,10 @@ netbox_plugins:
     version: "1.1.4"
     repository: "https://github.com/minitriga/netbox-reorder-rack"
 
-  proxmox_import:
-    name: "netbox-proxmox-import"
-    version: "1.1.2"
-    repository: "https://pypi.org/project/netbox-proxmox-import/"
+  proxbox:
+    name: "netbox-proxbox"
+    version: "0.0.6b2.post1"
+    repository: "https://github.com/netdevopsbr/netbox-proxbox"
 
 # Ansible Requirements - Pinned to stable releases (December 2025)
 ansible_core_version: "2.20.0"
@@ -110,7 +110,7 @@ netbox_python_packages:
   - "netbox-inventory==2.4.1"
   - "netbox-floorplan-plugin==0.8.0"
   - "netbox-reorder-rack==1.1.4"
-  - "netbox-proxmox-import==1.1.2"
+  - "netbox-proxbox==0.0.6b2.post1"
 
 # Version compatibility notes
 version_compatibility:
