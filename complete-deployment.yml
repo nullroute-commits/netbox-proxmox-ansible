@@ -100,10 +100,11 @@
       ansible.builtin.shell:
         cmd: |
           set -o pipefail
-          pct exec 103 -- ip -4 addr show eth0 | grep inet | awk '{print $2}' | cut -d/ -f1
+          pct exec 103 -- ip -4 addr show eth0 2>/dev/null | grep -oP 'inet \K[0-9.]+' || echo "IP_NOT_FOUND"
         executable: /bin/bash
       register: complete_proxy_ip
       changed_when: false
+      failed_when: false
 
     - name: Display access information
       ansible.builtin.debug:

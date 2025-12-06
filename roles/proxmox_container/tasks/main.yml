@@ -11,7 +11,7 @@
 - name: Create container
   ansible.builtin.command: >
     pct create {{ proxmox_container_item.vmid }}
-    {{ proxmox_container_template_storage }}:vztmpl/{{ proxmox_container_template | default(debian_template) }}
+    {{ proxmox_container_template_storage }}:vztmpl/{{ proxmox_container_template }}
     --hostname {{ proxmox_container_item.hostname }}
     --cores {{ proxmox_container_item.cpu | default(proxmox_container_default_cores) }}
     --memory {{ proxmox_container_item.memory | default(proxmox_container_default_memory) }}

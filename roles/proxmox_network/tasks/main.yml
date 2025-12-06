@@ -10,7 +10,6 @@
 - name: Create backend bridge
   ansible.builtin.shell:
     cmd: |
-      set -o pipefail
       brctl addbr {{ proxmox_network_backend.name | default(backend_network.name) }}
       ip addr add {{ proxmox_network_backend.gateway | default(backend_network.gateway) }}/24 dev {{ proxmox_network_backend.name | default(backend_network.name) }}
       ip link set {{ proxmox_network_backend.name | default(backend_network.name) }} up
@@ -27,7 +26,6 @@
 - name: Create DMZ bridge
   ansible.builtin.shell:
     cmd: |
-      set -o pipefail
       brctl addbr {{ proxmox_network_dmz.name | default(dmz_network.name) }}
       ip addr add {{ proxmox_network_dmz.gateway | default(dmz_network.gateway) }}/24 dev {{ proxmox_network_dmz.name | default(dmz_network.name) }}
       ip link set {{ proxmox_network_dmz.name | default(dmz_network.name) }} up
