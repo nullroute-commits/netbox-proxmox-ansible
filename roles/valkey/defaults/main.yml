@@ -1,0 +1,41 @@
+---
+# Valkey Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# Valkey version configuration
+valkey_version: "8.1.1"
+valkey_package: "valkey"
+
+# Valkey server configuration
+# NOTE: Binding to 0.0.0.0 is acceptable in this deployment because Valkey
+# runs on an isolated backend network (10.100.0.0/24) with no external access.
+# For public-facing deployments, bind to 127.0.0.1 or specific interface IPs.
+valkey_bind_address: "0.0.0.0"
+valkey_port: 6379
+
+# NOTE: Protected mode is disabled because Valkey is on an isolated network
+# segment. For environments with less network isolation, set to true and
+# configure authentication.
+valkey_protected_mode: false
+
+# Memory configuration
+valkey_maxmemory: "768mb"
+valkey_maxmemory_policy: "allkeys-lru"
+
+# Database configuration
+valkey_databases: 16
+
+# Persistence configuration
+valkey_save_intervals:
+  - "900 1"
+  - "300 10"
+  - "60 10000"
+
+# Valkey repository configuration
+valkey_repo_key_url: "https://packages.valkey.io/gpg"
+valkey_repo_keyring: "/usr/share/keyrings/valkey-archive-keyring.gpg"
+valkey_repo_url: "https://packages.valkey.io/deb"
+valkey_repo_distribution: "bookworm"
+
+# Container identification (set by playbook)
+# valkey_vmid: 102

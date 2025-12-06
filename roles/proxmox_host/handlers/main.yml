@@ -1,0 +1,7 @@
+---
+# roles/proxmox_host/handlers/main.yml
+
+- name: Reload sysctl
+  ansible.builtin.command: sysctl --system
+  listen: sysctl_reload
+  changed_when: false

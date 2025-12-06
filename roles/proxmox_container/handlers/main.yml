@@ -1,0 +1,8 @@
+---
+# roles/proxmox_container/handlers/main.yml
+
+- name: Restart container networking
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart networking
+  listen: container_network_restart
+  changed_when: false
+  failed_when: false

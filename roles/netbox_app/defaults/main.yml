@@ -1,0 +1,98 @@
+---
+# NetBox Application Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# NetBox version configuration
+netbox_app_version: "v4.4.7"
+netbox_app_repository: "https://github.com/netbox-community/netbox.git"
+netbox_app_branch: "main"
+
+# NetBox installation paths
+netbox_app_install_path: "/opt/netbox"
+netbox_app_user: "netbox"
+netbox_app_group: "netbox"
+
+# Python configuration
+netbox_app_python_version: "3.13"
+
+# Gunicorn configuration
+netbox_app_gunicorn_version: "23.0.0"
+netbox_app_gunicorn_bind: "0.0.0.0:8000"
+netbox_app_gunicorn_workers: 4
+netbox_app_gunicorn_timeout: 120
+
+# NetBox allowed hosts
+# NOTE: Using '*' is acceptable in this deployment because NetBox is behind
+# an Nginx reverse proxy that handles host header validation. The proxy
+# only forwards requests to valid hosts.
+# For direct exposure or stricter security, specify actual hostnames/IPs.
+netbox_app_allowed_hosts:
+  - "*"
+
+# Database configuration
+netbox_app_database_name: "netbox"
+netbox_app_database_user: "netbox"
+# netbox_app_database_password: Set via vault
+# netbox_app_database_host: Set in playbook
+
+# Redis/Valkey configuration
+# netbox_app_redis_host: Set in playbook
+netbox_app_redis_port: 6379
+netbox_app_redis_password: ""
+netbox_app_redis_tasks_database: 0
+netbox_app_redis_caching_database: 1
+netbox_app_redis_ssl: false
+
+# Superuser configuration
+netbox_app_superuser_username: "admin"
+netbox_app_superuser_email: "admin@localhost"
+# netbox_app_superuser_password: Set via vault
+
+# NetBox plugins with pinned versions
+netbox_app_plugins:
+  - "netbox-plugin-dns==1.4.4"
+  - "netbox-secrets==2.4.1"
+  - "netbox-acls==1.9.1"
+  - "netbox-bgp==0.17.0"
+  - "netbox-inventory==2.4.1"
+  - "netbox-floorplan-plugin==0.8.0"
+  - "netbox-reorder-rack==1.1.4"
+  - "netbox-proxbox==0.0.6b2.post1"
+
+# Plugin module names for configuration.py
+netbox_app_plugin_modules:
+  - "netbox_dns"
+  - "netbox_secrets"
+  - "netbox_acls"
+  - "netbox_bgp"
+  - "netbox_inventory"
+  - "netbox_floorplan"
+  - "netbox_reorder_rack"
+  - "netbox_proxbox"
+
+# NetBox-Proxbox Plugin Configuration
+netbox_app_proxbox_plugin_enabled: true
+netbox_app_proxbox_config:
+  # Proxmox connection settings (configured via NetBox UI after deployment)
+  # These are documented defaults - actual configuration done in NetBox admin
+  default_settings:
+    verify_ssl: true
+    timeout: 30
+
+# Python build dependencies
+netbox_app_python_packages:
+  - python3
+  - python3-pip
+  - python3-venv
+  - python3-dev
+  - build-essential
+  - libxml2-dev
+  - libxslt1-dev
+  - libffi-dev
+  - libpq-dev
+  - libssl-dev
+  - zlib1g-dev
+  - git
+
+# Container identification (set by playbook)
+# netbox_app_vmid: 100

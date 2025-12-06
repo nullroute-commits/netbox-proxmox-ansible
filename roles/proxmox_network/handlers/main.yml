@@ -1,0 +1,7 @@
+---
+# roles/proxmox_network/handlers/main.yml
+
+- name: Reload iptables
+  ansible.builtin.shell: iptables-restore < {{ proxmox_network_iptables_rules }}
+  listen: iptables_reload
+  changed_when: false

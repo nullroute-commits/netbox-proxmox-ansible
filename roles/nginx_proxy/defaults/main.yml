@@ -1,0 +1,58 @@
+---
+# Nginx Proxy Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# Nginx version configuration
+nginx_proxy_version: "1.26"
+nginx_proxy_full_version: "1.26.3"
+
+# Nginx packages to install
+nginx_proxy_packages:
+  - nginx
+  - openssl
+
+# SSL configuration
+nginx_proxy_ssl_dir: "/etc/nginx/ssl"
+nginx_proxy_ssl_cert: "/etc/nginx/ssl/netbox.crt"
+nginx_proxy_ssl_key: "/etc/nginx/ssl/netbox.key"
+
+# SSL certificate generation settings (self-signed)
+nginx_proxy_ssl_days: 365
+nginx_proxy_ssl_key_size: 4096
+nginx_proxy_ssl_subject: "/C=US/ST=State/L=City/O=Organization/CN=netbox.local"
+
+# SSL protocols and ciphers
+nginx_proxy_ssl_protocols: "TLSv1.2 TLSv1.3"
+nginx_proxy_ssl_ciphers: "HIGH:!aNULL:!MD5"
+nginx_proxy_ssl_prefer_server_ciphers: true
+nginx_proxy_ssl_session_cache: "shared:SSL:10m"
+nginx_proxy_ssl_session_timeout: "10m"
+
+# Upstream configuration
+nginx_proxy_upstream_name: "netbox"
+# nginx_proxy_upstream_server: Set in playbook (e.g., 10.100.1.10:8000)
+
+# Server configuration
+nginx_proxy_server_name: "_"
+nginx_proxy_client_max_body_size: "25m"
+
+# Proxy settings
+nginx_proxy_connect_timeout: "300s"
+nginx_proxy_send_timeout: "300s"
+nginx_proxy_read_timeout: "300s"
+nginx_proxy_buffering: false
+nginx_proxy_request_buffering: false
+
+# Security headers
+nginx_proxy_security_headers:
+  - "X-Content-Type-Options nosniff"
+  - "X-Frame-Options SAMEORIGIN"
+  - "X-XSS-Protection \"1; mode=block\""
+
+# Site configuration
+nginx_proxy_site_name: "netbox"
+nginx_proxy_sites_available: "/etc/nginx/sites-available"
+nginx_proxy_sites_enabled: "/etc/nginx/sites-enabled"
+
+# Container identification (set by playbook)
+# nginx_proxy_vmid: 103

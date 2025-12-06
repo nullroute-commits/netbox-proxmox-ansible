@@ -1,0 +1,12 @@
+---
+# roles/postgresql/handlers/main.yml
+
+- name: Restart PostgreSQL
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart postgresql
+  listen: postgresql_restart
+  changed_when: false
+
+- name: Reload PostgreSQL
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl reload postgresql
+  listen: postgresql_reload
+  changed_when: false

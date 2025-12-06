@@ -2,39 +2,42 @@
 # roles/nginx_proxy/tasks/main.yml
 
 - name: Install Nginx and OpenSSL
-  command: pct exec {{ container.vmid }} -- apt install -y nginx openssl
-  register: nginx_install
-  changed_when: "'0 newly installed' not in nginx_install.stdout"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- apt install -y {{ nginx_proxy_packages | join(' ') }}
+  register: nginx_proxy_install
+  changed_when: "'0 newly installed' not in nginx_proxy_install.stdout"
 
 - name: Create SSL directory
-  command: pct exec {{ container.vmid }} -- mkdir -p /etc/nginx/ssl
+  ansible.builtin.command: pct exec {{ container.vmid }} -- mkdir -p {{ nginx_proxy_ssl_dir }}
   changed_when: false
 
 - name: Generate self-signed SSL certificate
-  command: >
-    pct exec {{ container.vmid }} -- openssl req -x509 -nodes -days 365 -newkey rsa:4096
-    -keyout /etc/nginx/ssl/netbox.key
-    -out /etc/nginx/ssl/netbox.crt
-    -subj "/C=US/ST=State/L=City/O=Organization/CN=netbox.local"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- openssl req -x509 -nodes
+    -days {{ nginx_proxy_ssl_days }}
+    -newkey rsa:{{ nginx_proxy_ssl_key_size }}
+    -keyout {{ nginx_proxy_ssl_key }}
+    -out {{ nginx_proxy_ssl_cert }}
+    -subj "{{ nginx_proxy_ssl_subject }}"
   args:
-    creates: /etc/nginx/ssl/netbox.crt
+    creates: "{{ nginx_proxy_ssl_cert }}"
   changed_when: false
   failed_when: false
 
 - name: Set permissions on SSL key
-  command: pct exec {{ container.vmid }} -- chmod 600 /etc/nginx/ssl/netbox.key
+  ansible.builtin.command: pct exec {{ container.vmid }} -- chmod 600 {{ nginx_proxy_ssl_key }}
   changed_when: false
 
 - name: Template Nginx configuration
-  shell: |
-    pct exec {{ container.vmid }} -- bash -c 'cat > /etc/nginx/sites-available/netbox << "EOF"
-    upstream netbox {
+  ansible.builtin.shell: |
+    pct exec {{ container.vmid }} -- bash -c 'cat > {{ nginx_proxy_sites_available }}/{{ nginx_proxy_site_name }} << "EOF"
+    upstream {{ nginx_proxy_upstream_name }} {
         server {{ containers.application.dmz_ip }}:8000;
     }
 
     server {
         listen 80;
-        server_name _;
+        server_name {{ nginx_proxy_server_name }};
         return 301 https://$host$request_uri;
     }
 
@@ -42,39 +45,39 @@
         listen 443 ssl;
         listen [::]:443 ssl;
         http2 on;
-        
-        server_name _;
 
-        ssl_certificate /etc/nginx/ssl/netbox.crt;
-        ssl_certificate_key /etc/nginx/ssl/netbox.key;
-        
-        ssl_protocols TLSv1.2 TLSv1.3;
-        ssl_ciphers HIGH:!aNULL:!MD5;
-        ssl_prefer_server_ciphers on;
-        ssl_session_cache shared:SSL:10m;
-        ssl_session_timeout 10m;
+        server_name {{ nginx_proxy_server_name }};
 
-        client_max_body_size 25m;
+        ssl_certificate {{ nginx_proxy_ssl_cert }};
+        ssl_certificate_key {{ nginx_proxy_ssl_key }};
+
+        ssl_protocols {{ nginx_proxy_ssl_protocols }};
+        ssl_ciphers {{ nginx_proxy_ssl_ciphers }};
+        ssl_prefer_server_ciphers {{ nginx_proxy_ssl_prefer_server_ciphers | ternary('on', 'off') }};
+        ssl_session_cache {{ nginx_proxy_ssl_session_cache }};
+        ssl_session_timeout {{ nginx_proxy_ssl_session_timeout }};
+
+        client_max_body_size {{ nginx_proxy_client_max_body_size }};
 
         location /static/ {
-            proxy_pass http://netbox/static/;
+            proxy_pass http://{{ nginx_proxy_upstream_name }}/static/;
             proxy_set_header Host $http_host;
         }
 
         location / {
-            proxy_pass http://netbox;
+            proxy_pass http://{{ nginx_proxy_upstream_name }};
             proxy_set_header Host $http_host;
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header X-Forwarded-Host $http_host;
-            
-            proxy_connect_timeout 300s;
-            proxy_send_timeout 300s;
-            proxy_read_timeout 300s;
-            
-            proxy_buffering off;
-            proxy_request_buffering off;
+
+            proxy_connect_timeout {{ nginx_proxy_connect_timeout }};
+            proxy_send_timeout {{ nginx_proxy_send_timeout }};
+            proxy_read_timeout {{ nginx_proxy_read_timeout }};
+
+            proxy_buffering {{ nginx_proxy_buffering | ternary('on', 'off') }};
+            proxy_request_buffering {{ nginx_proxy_request_buffering | ternary('on', 'off') }};
         }
 
         add_header X-Content-Type-Options nosniff;
@@ -85,23 +88,26 @@
   changed_when: false
 
 - name: Enable NetBox site
-  command: pct exec {{ container.vmid }} -- ln -sf /etc/nginx/sites-available/netbox /etc/nginx/sites-enabled/netbox
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- ln -sf
+    {{ nginx_proxy_sites_available }}/{{ nginx_proxy_site_name }}
+    {{ nginx_proxy_sites_enabled }}/{{ nginx_proxy_site_name }}
   changed_when: false
   failed_when: false
 
 - name: Disable default site
-  command: pct exec {{ container.vmid }} -- rm -f /etc/nginx/sites-enabled/default
+  ansible.builtin.command: pct exec {{ container.vmid }} -- rm -f {{ nginx_proxy_sites_enabled }}/default
   changed_when: false
   failed_when: false
 
 - name: Test Nginx configuration
-  command: pct exec {{ container.vmid }} -- nginx -t
+  ansible.builtin.command: pct exec {{ container.vmid }} -- nginx -t
   changed_when: false
 
 - name: Restart Nginx
-  command: pct exec {{ container.vmid }} -- systemctl restart nginx
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart nginx
   changed_when: false
 
 - name: Enable Nginx service
-  command: pct exec {{ container.vmid }} -- systemctl enable nginx
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl enable nginx
   changed_when: false

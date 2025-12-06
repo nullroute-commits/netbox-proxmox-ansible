@@ -5,6 +5,7 @@
 __pycache__/
 .molecule/
 .cache/
+.ansible/
 
 # Logs
 *.log

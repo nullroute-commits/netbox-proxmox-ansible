@@ -1,0 +1,26 @@
+---
+# Proxmox Host Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# Proxmox version
+proxmox_host_version: "9.0"
+
+# Required packages for Proxmox host
+proxmox_host_packages:
+  - bridge-utils
+  - python3-proxmoxer
+  - python3-requests
+  - iptables-persistent
+
+# Sysctl configuration
+proxmox_host_sysctl:
+  - name: "net.ipv4.ip_forward"
+    value: "1"
+  - name: "vm.overcommit_memory"
+    value: "1"
+  - name: "net.ipv4.conf.all.rp_filter"
+    value: "0"
+
+# Log directory for Ansible operations
+proxmox_host_log_dir: "/var/log/ansible"
+proxmox_host_log_mode: "0755"

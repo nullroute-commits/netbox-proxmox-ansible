@@ -40,41 +40,65 @@ netbox_plugins:
     name: "netbox-plugin-dns"
     version: "1.4.4"
     repository: "https://github.com/auroraresearchlab/netbox-dns"
-  
+
   secrets:
     name: "netbox-secrets"
     version: "2.4.1"
     repository: "https://github.com/Onemind-Services-LLC/netbox-secrets"
-  
+
   acls:
     name: "netbox-acls"
     version: "1.9.1"
     repository: "https://github.com/netbox-community/netbox-acls"
-  
+
   bgp:
     name: "netbox-bgp"
     version: "0.17.0"
     repository: "https://github.com/netbox-community/netbox-bgp"
-  
+
   inventory:
     name: "netbox-inventory"
     version: "2.4.1"
     repository: "https://github.com/ArnesSI/netbox-inventory"
-  
+
   floorplan:
     name: "netbox-floorplan-plugin"
     version: "0.8.0"
     repository: "https://github.com/netbox-community/netbox-floorplan"
-  
+
   reorder_rack:
     name: "netbox-reorder-rack"
     version: "1.1.4"
     repository: "https://github.com/minitriga/netbox-reorder-rack"
 
-# Ansible Requirements
-ansible_min_version: "2.14.0"
-ansible_recommended_version: "2.16+"
-ansible_python_version: "3.9+"
+  proxbox:
+    name: "netbox-proxbox"
+    version: "0.0.6b2.post1"
+    repository: "https://github.com/netdevopsbr/netbox-proxbox"
+
+# Ansible Requirements - Pinned to stable releases (December 2025)
+ansible_core_version: "2.20.0"
+ansible_min_version: "2.17.0"
+ansible_recommended_version: "2.20.0"
+ansible_python_version: "3.10+"
+
+# Ansible Collections - Pinned versions
+ansible_collections:
+  community_general:
+    name: "community.general"
+    version: "12.1.0"
+    min_ansible_core: "2.17.0"
+  ansible_posix:
+    name: "ansible.posix"
+    version: "2.1.0"
+    min_ansible_core: "2.15.0"
+  community_proxmox:
+    name: "community.proxmox"
+    version: "1.4.0"
+    min_ansible_core: "2.17.0"
+
+# Ansible Lint Version
+ansible_lint_version: "25.12.0"
 
 # Python packages for NetBox (pinned versions)
 netbox_python_packages:
@@ -86,6 +110,7 @@ netbox_python_packages:
   - "netbox-inventory==2.4.1"
   - "netbox-floorplan-plugin==0.8.0"
   - "netbox-reorder-rack==1.1.4"
+  - "netbox-proxbox==0.0.6b2.post1"
 
 # Version compatibility notes
 version_compatibility:
@@ -94,3 +119,5 @@ version_compatibility:
   netbox_valkey: "7.0+"
   postgresql_eol: "2029-11"
   python_eol: "2029-10"
+  ansible_core_2_20_eol: "2026-11"
+  ansible_core_2_17_eol: "2025-05"

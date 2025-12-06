@@ -1,0 +1,81 @@
+---
+# Ansible Lint Configuration
+# https://ansible.readthedocs.io/projects/lint/configuring/
+# Version: 25.12.0+ compatible
+
+# Use the production profile for strict checking
+profile: production
+
+# Offline mode for air-gapped environments
+offline: true
+
+# Paths to exclude from linting
+exclude_paths:
+  - .git/
+  - .github/
+  - group_vars/all/vault.yml
+  - collections/
+
+# Rules to skip (with justification for this codebase)
+skip_list:
+  # Allow longer lines for readability in complex Jinja2 templates
+  - yaml[line-length]
+  # Allow flexibility in task name casing
+  - name[casing]
+  # Meta schema issues for Proxmox platform (not in official list)
+  - schema[meta]
+
+# Rules to warn about but not fail
+warn_list:
+  # Internal errors related to vault.yml decryption in lint mode
+  - internal-error
+
+# Enable specific optional checks
+enable_list:
+  - args
+  - empty-string-compare
+  - no-log-password
+  - no-same-owner
+
+# Kinds configuration for file type detection
+kinds:
+  - playbook: "playbooks/*.yml"
+  - tasks: "roles/*/tasks/*.yml"
+  - handlers: "roles/*/handlers/*.yml"
+  - vars: "group_vars/**/*.yml"
+  - vars: "roles/*/vars/*.yml"
+  - vars: "roles/*/defaults/*.yml"
+  - meta: "roles/*/meta/*.yml"
+
+# Mock modules and roles for offline mode
+mock_modules:
+  - ansible.posix.sysctl
+mock_roles: []
+
+# Verbosity level
+verbosity: 1
+
+# Use progressive mode for CI
+progressive: false
+
+# Strict mode (fail on any warning)
+strict: false
+
+# Parseable output for CI integration
+parseable: false
+
+# Quiet mode
+quiet: false
+
+# Loop variable prefix (prevent scope issues)
+loop_var_prefix: "^(__|{role}_)"
+
+# Variable naming pattern (enforce snake_case)
+var_naming_pattern: "^[a-z_][a-z0-9_]*$"
+
+# Use default rules from the specified tags
+use_default_rules: true
+
+# Minimum Ansible version for compatibility checking
+# Matches our requirements.yml
+# Note: This ensures linting checks for ansible-core 2.17+ compatibility

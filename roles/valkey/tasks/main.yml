@@ -2,52 +2,62 @@
 # roles/valkey/tasks/main.yml
 
 - name: Add Valkey repository key
-  command: pct exec {{ container.vmid }} -- bash -c "curl -fsSL https://packages.valkey.io/gpg | gpg --dearmor -o /usr/share/keyrings/valkey-archive-keyring.gpg"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "curl -fsSL {{ valkey_repo_key_url }} | gpg --dearmor -o {{ valkey_repo_keyring }}"
   changed_when: false
 
 - name: Add Valkey repository
-  command: pct exec {{ container.vmid }} -- bash -c "echo 'deb [signed-by=/usr/share/keyrings/valkey-archive-keyring.gpg] https://packages.valkey.io/deb bookworm main' > /etc/apt/sources.list.d/valkey.list"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "echo 'deb [signed-by={{ valkey_repo_keyring }}] {{ valkey_repo_url }} {{ valkey_repo_distribution }} main'
+    > /etc/apt/sources.list.d/valkey.list"
   changed_when: false
 
 - name: Update apt cache
-  command: pct exec {{ container.vmid }} -- apt update
+  ansible.builtin.command: pct exec {{ container.vmid }} -- apt update
   changed_when: false
 
 - name: Install Valkey
-  command: pct exec {{ container.vmid }} -- apt install -y valkey
+  ansible.builtin.command: pct exec {{ container.vmid }} -- apt install -y {{ valkey_package }}
   register: valkey_install
   changed_when: "'0 newly installed' not in valkey_install.stdout"
 
 - name: Configure Valkey to bind to all interfaces
-  command: pct exec {{ container.vmid }} -- bash -c "sed -i 's/bind 127.0.0.1 -::1/bind 0.0.0.0/g' /etc/valkey/valkey.conf"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "sed -i 's/bind 127.0.0.1 -::1/bind {{ valkey_bind_address }}/g' /etc/valkey/valkey.conf"
   changed_when: false
 
 - name: Disable protected mode
-  command: pct exec {{ container.vmid }} -- bash -c "sed -i 's/protected-mode yes/protected-mode no/g' /etc/valkey/valkey.conf"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c
+    "sed -i 's/protected-mode yes/protected-mode {{ valkey_protected_mode | ternary('yes', 'no') }}/g' /etc/valkey/valkey.conf"
   changed_when: false
 
 - name: Remove locale-collate from config
-  command: pct exec {{ container.vmid }} -- bash -c "sed -i '/locale-collate/d' /etc/valkey/valkey.conf"
+  ansible.builtin.command: >
+    pct exec {{ container.vmid }} -- bash -c "sed -i '/locale-collate/d' /etc/valkey/valkey.conf"
   changed_when: false
 
 - name: Create Valkey runtime directory
-  command: pct exec {{ container.vmid }} -- mkdir -p /run/valkey
+  ansible.builtin.command: pct exec {{ container.vmid }} -- mkdir -p /run/valkey
   changed_when: false
 
 - name: Set Valkey runtime directory permissions
-  command: pct exec {{ container.vmid }} -- chown valkey:valkey /run/valkey
+  ansible.builtin.command: pct exec {{ container.vmid }} -- chown valkey:valkey /run/valkey
   changed_when: false
 
 - name: Restart Valkey service
-  command: pct exec {{ container.vmid }} -- systemctl restart valkey
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl restart valkey
   changed_when: false
 
 - name: Enable Valkey service
-  command: pct exec {{ container.vmid }} -- systemctl enable valkey
+  ansible.builtin.command: pct exec {{ container.vmid }} -- systemctl enable valkey
   changed_when: false
 
 - name: Wait for Valkey to be ready
-  command: pct exec {{ container.vmid }} -- valkey-cli ping
+  ansible.builtin.command: pct exec {{ container.vmid }} -- valkey-cli ping
   register: valkey_ping
   until: valkey_ping.stdout == "PONG"
   retries: 10
@@ -55,8 +65,8 @@
   changed_when: false
 
 - name: Display Valkey status
-  debug:
+  ansible.builtin.debug:
     msg:
       - "Valkey {{ valkey_version }} installed and running"
-      - "Listening on: 0.0.0.0:6379"
+      - "Listening on: {{ valkey_bind_address }}:{{ valkey_port }}"
       - "Status: {{ valkey_ping.stdout }}"

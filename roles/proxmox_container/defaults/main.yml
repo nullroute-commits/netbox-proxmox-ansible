@@ -1,0 +1,35 @@
+---
+# Proxmox Container Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# Container template configuration
+proxmox_container_template: "debian-13-standard_13.1-2_amd64.tar.zst"
+proxmox_container_template_storage: "local"
+proxmox_container_template_path: "/var/lib/vz/template/cache"
+
+# Default container settings
+proxmox_container_ostype: "unmanaged"
+proxmox_container_storage: "local-zfs"
+proxmox_container_unprivileged: true
+proxmox_container_onboot: true
+proxmox_container_start: true
+
+# Default container features
+proxmox_container_features:
+  - "nesting=1"
+
+# Default resource limits (can be overridden per container)
+proxmox_container_default_cores: 1
+proxmox_container_default_memory: 1024
+proxmox_container_default_swap: 512
+proxmox_container_default_disk: 8
+
+# Network interface names
+proxmox_container_net0_name: "eth0"
+proxmox_container_net1_name: "eth1"
+
+# Wait timeout after container creation (seconds)
+proxmox_container_wait_timeout: 30
+
+# Container root password (set via vault)
+# proxmox_container_root_password: Set via vault

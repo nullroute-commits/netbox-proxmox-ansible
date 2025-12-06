@@ -1,0 +1,27 @@
+---
+# Proxmox Host Role - Galaxy Metadata
+galaxy_info:
+  role_name: proxmox_host
+  author: NetBox Proxmox Team
+  description: Prepare Proxmox VE host for container deployment
+  company: ""
+  license: MIT
+  min_ansible_version: "2.17"
+
+  platforms:
+    - name: Proxmox
+      versions:
+        - "9"
+        - "8"
+    - name: Debian
+      versions:
+        - trixie
+        - bookworm
+
+  galaxy_tags:
+    - proxmox
+    - host
+    - infrastructure
+    - virtualization
+
+dependencies: []

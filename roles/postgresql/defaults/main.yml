@@ -1,0 +1,36 @@
+---
+# PostgreSQL Role - Default Variables
+# These variables can be overridden in group_vars, host_vars, or playbook vars
+
+# PostgreSQL version configuration
+postgresql_version: "17"
+postgresql_full_version: "17.6"
+
+# PostgreSQL packages to install
+postgresql_packages:
+  - "postgresql-{{ postgresql_version }}"
+  - "postgresql-client-{{ postgresql_version }}"
+
+# PostgreSQL server configuration
+# NOTE: Listen on all addresses is acceptable in this deployment because
+# PostgreSQL runs on an isolated backend network (10.100.0.0/24) with
+# pg_hba.conf restricting access to that subnet only.
+# For public-facing deployments, bind to specific interface IPs.
+postgresql_listen_addresses: "*"
+postgresql_max_connections: 200
+postgresql_port: 5432
+
+# PostgreSQL authentication
+postgresql_auth_method: "md5"
+
+# NetBox database configuration
+postgresql_netbox_database: "netbox"
+postgresql_netbox_user: "netbox"
+# postgresql_netbox_password: Set via vault
+
+# Network configuration for pg_hba.conf
+# postgresql_allowed_networks:
+#   - "10.100.0.0/24"
+
+# Container identification (set by playbook)
+# postgresql_vmid: 101

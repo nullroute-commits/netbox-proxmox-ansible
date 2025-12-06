@@ -2,28 +2,21 @@
 # roles/proxmox_host/tasks/main.yml
 
 - name: Install required packages
-  apt:
-    name:
-      - bridge-utils
-      - python3-proxmoxer
-      - python3-requests
-      - iptables-persistent
+  ansible.builtin.apt:
+    name: "{{ proxmox_host_packages }}"
     state: present
-    update_cache: yes
+    update_cache: true
 
 - name: Configure sysctl parameters
-  sysctl:
+  ansible.posix.sysctl:
     name: "{{ item.name }}"
     value: "{{ item.value }}"
     state: present
-    reload: yes
-  loop:
-    - { name: 'net.ipv4.ip_forward', value: '1' }
-    - { name: 'vm.overcommit_memory', value: '1' }
-    - { name: 'net.ipv4.conf.all.rp_filter', value: '0' }
+    reload: true
+  loop: "{{ proxmox_host_sysctl }}"
 
 - name: Create log directory for Ansible
-  file:
-    path: /var/log/ansible
+  ansible.builtin.file:
+    path: "{{ proxmox_host_log_dir }}"
     state: directory
-    mode: '0755'
+    mode: "{{ proxmox_host_log_mode }}"
