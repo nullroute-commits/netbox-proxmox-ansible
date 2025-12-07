@@ -1,14 +1,16 @@
-# NetBox on Proxmox VE 9.0 - Architecture Documentation
+# NetBox on Proxmox VE 9.1 - Architecture Documentation
 
 ## Overview
 
-This document describes the architecture, design decisions, and implementation details for deploying NetBox in a multi-container LXC environment on Proxmox VE 9.0.
+This document describes the architecture, design decisions, and implementation details for deploying NetBox in a multi-container LXC environment on Proxmox VE 9.1+.
+
+**System Information Collection:** Use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) bash script to collect comprehensive hardware and software information from your Proxmox node before deployment.
 
 ## Architecture Diagram
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                     Proxmox VE 9.0 Host                         │
+│                  Proxmox VE 9.1+ Host                           │
 │                                                                   │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │                    vmbr0 (External)                         │ │

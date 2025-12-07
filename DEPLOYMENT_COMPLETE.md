@@ -261,7 +261,7 @@ Comprehensive documentation available:
 
 | Component | Version | Status |
 |-----------|---------|--------|
-| Proxmox VE | 9.0 | ✅ Running |
+| Proxmox VE | 9.1+ | ✅ Running |
 | Debian | 13 (Trixie) | ✅ Running |
 | NetBox | Latest (main) | ✅ Running |
 | PostgreSQL | 17.6 | ✅ Running |

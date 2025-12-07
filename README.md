@@ -1,6 +1,6 @@
-# NetBox on Proxmox VE 9.0 - Ansible Automation
+# NetBox on Proxmox VE 9.1 - Ansible Automation
 
-Automated deployment of NetBox IPAM/DCIM application on Proxmox VE 9.0 using LXC containers with three-tier network architecture.
+Automated deployment of NetBox IPAM/DCIM application on Proxmox VE 9.1 using LXC containers with three-tier network architecture.
 
 ## Features
 
@@ -13,6 +13,47 @@ Automated deployment of NetBox IPAM/DCIM application on Proxmox VE 9.0 using LXC
 - ✅ **Security Hardened**: Unprivileged containers, network segmentation, SSL/TLS
 
 ## Quick Start
+
+### Prerequisites Validation
+
+Before starting deployment, validate your system meets all prerequisites:
+
+```bash
+# On Proxmox host, run the validation script
+curl -O https://raw.githubusercontent.com/nullroute-commits/netbox-proxmox-ansible/main/scripts/validate-prerequisites.sh
+chmod +x validate-prerequisites.sh
+./validate-prerequisites.sh
+
+# Or if you've already cloned the repository
+cd /root/netbox-proxmox-ansible
+./scripts/validate-prerequisites.sh
+```
+
+See [docs/PREREQUISITES.md](docs/PREREQUISITES.md) for detailed requirements and troubleshooting.
+
+### System Capability Analysis (Recommended)
+
+Collect system information and generate optimized deployment configuration:
+
+```bash
+# 1. Collect system information with automation_nation
+git clone https://github.com/nullroute-commits/automation_nation.git
+cd automation_nation
+./collect_info.sh -o /path/to/netbox-proxmox-ansible/system_info.json
+
+# 2. Analyze system capabilities and generate configuration
+cd /path/to/netbox-proxmox-ansible
+ansible-playbook playbooks/analyze-system-capabilities.yml
+
+# This analyzes:
+# - Networking: Interfaces, suggested bridge configuration
+# - Hardware: CPU/memory/storage, optimized container allocations
+# - Software: OS, packages, virtualization compatibility
+```
+
+See [docs/SYSTEM_CAPABILITY_ANALYSIS.md](docs/SYSTEM_CAPABILITY_ANALYSIS.md) for detailed information.
+
+### Deployment Steps
 
 ```bash
 # 1. Clone repository
@@ -78,7 +119,7 @@ All versions pinned to stable releases as of December 2025. See [VERSIONS.md](VE
 
 | Component | Version | Purpose | EOL |
 |-----------|---------|---------|-----|
-| Proxmox VE | 9.0.3 | Virtualization Platform | - |
+| Proxmox VE | 9.1+ | Virtualization Platform | - |
 | Debian | 13.1 (Trixie) | Container OS | - |
 | NetBox | v4.4.7 | IPAM/DCIM Application | - |
 | PostgreSQL | 17.6 | Database | Nov 2029 |
@@ -108,17 +149,43 @@ See [docs/PROXMOX_INTEGRATION.md](docs/PROXMOX_INTEGRATION.md) for Proxmox plugi
 
 Comprehensive documentation is available in the `docs/` directory:
 
+- **[SYSTEM_CAPABILITY_ANALYSIS.md](docs/SYSTEM_CAPABILITY_ANALYSIS.md)** - **NEW:** Automated system analysis using automation_nation for networking, hardware, and software resources
+- **[PREREQUISITES.md](docs/PREREQUISITES.md)** - Comprehensive prerequisites, hardware requirements, and validation
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed architecture, design decisions, and operational procedures
 - **[ANSIBLE_DESIGN.md](docs/ANSIBLE_DESIGN.md)** - Ansible project structure, roles, and automation design
 - **[COMMAND_REFERENCE.md](docs/COMMAND_REFERENCE.md)** - Complete command reference for all components
+- **[GREENFIELD_DEPLOYMENT.md](docs/GREENFIELD_DEPLOYMENT.md)** - Step-by-step greenfield deployment guide
+
+**Hardware Specifications:** Use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) bash script to collect comprehensive hardware and software information from your Proxmox node before deployment.
 
 ## Prerequisites
 
-- Proxmox VE 9.0 installed and configured
-- At least 8GB RAM available for containers
-- 100GB storage (ZFS recommended)
+### Hardware Requirements
+
+**Collect Node Capabilities:** Use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) to collect your Proxmox node's hardware and software information:
+
+```bash
+# On Proxmox host
+git clone https://github.com/nullroute-commits/automation_nation.git
+cd automation_nation
+./collect_info.sh -o proxmox_node_info.json
+```
+
+This provides comprehensive system information including CPU, memory, storage, network, and installed software.
+- Node deployment configurations
+
+**Minimum Requirements:**
+- Proxmox VE 9.1+ installed and configured
+- At least 8GB RAM available for containers (16GB recommended)
+- 100GB storage (ZFS recommended for production)
+- Dual-core CPU (Quad-core recommended)
 - Internet connectivity for package downloads
 - Root or sudo access to Proxmox host
+
+**Network Requirements:**
+- Available bridge interfaces (vmbr0, or ability to create vmbr1, vmbr2)
+- DHCP or static IP configuration
+- Outbound internet access for package installation
 
 ### Ansible Requirements
 
@@ -369,7 +436,7 @@ Contributions welcome! Please:
 ![Ansible](https://img.shields.io/badge/ansible--core-%3E%3D2.17.0-blue.svg)
 ![Ansible Recommended](https://img.shields.io/badge/ansible--core-2.20.0-brightgreen.svg)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue.svg)
-![Proxmox](https://img.shields.io/badge/proxmox-9.0-orange.svg)
+![Proxmox](https://img.shields.io/badge/proxmox-9.1%2B-orange.svg)
 ![NetBox](https://img.shields.io/badge/netbox-v4.4.7-green.svg)
 ![Status](https://img.shields.io/badge/status-production--ready-brightgreen.svg)
 ![Lint](https://img.shields.io/badge/ansible--lint-25.12.0-success.svg)
@@ -403,4 +470,4 @@ MIT License is chosen for maximum compatibility with:
 
 **Last Updated**: December 2025
 
-**Tested On**: Proxmox VE 9.0, Debian 13 (Trixie)
+**Tested On**: Proxmox VE 9.1, Debian 13 (Trixie)

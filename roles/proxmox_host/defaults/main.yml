@@ -2,8 +2,9 @@
 # Proxmox Host Role - Default Variables
 # These variables can be overridden in group_vars, host_vars, or playbook vars
 
-# Proxmox version
-proxmox_host_version: "9.0"
+# Proxmox version (supports 9.0+, optimized for 9.1+)
+proxmox_host_version: "9.1"
+proxmox_host_min_version: "9.0"
 
 # Required packages for Proxmox host
 proxmox_host_packages:

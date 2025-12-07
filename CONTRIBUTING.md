@@ -1,6 +1,8 @@
-# Contributing to NetBox on Proxmox VE
+# Contributing to NetBox on Proxmox VE 9.1+
 
 Thank you for your interest in contributing to this project! This document provides guidelines and instructions for contributing.
+
+**System Information Collection:** Use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) bash script to collect hardware and software information when reporting issues or testing changes.
 
 ## Table of Contents
 
@@ -32,10 +34,11 @@ Before creating bug reports, please check existing issues to avoid duplicates. W
 - **Describe the behavior you observed** and what you expected
 - **Include logs** from the deployment or service failures
 - **Specify your environment:**
-  - Proxmox VE version
+  - Proxmox VE version (9.0+, 9.1+ recommended)
   - Debian version
   - Ansible version
   - NetBox version
+  - Hardware info (use automation_nation.git collect_info.sh)
 
 **Bug Report Template:**
 ```markdown
@@ -54,10 +57,11 @@ What should happen
 What actually happens
 
 **Environment:**
-- Proxmox VE: x.x
+- Proxmox VE: 9.x (specify 9.0, 9.1, etc.)
 - Debian: x.x
 - Ansible: x.x
 - NetBox: x.x
+- Hardware: (attach automation_nation collect_info.sh output)
 
 **Logs:**
 ```
