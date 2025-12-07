@@ -2,15 +2,168 @@
 
 ## Overview
 
-Complete automated deployment of NetBox on Proxmox VE 9.0 from a clean environment.
+Complete automated deployment of NetBox on Proxmox VE 9.1 from a clean environment. This guide ensures successful deployment on a greenfield Proxmox installation with proper hardware and software prerequisites.
+
+## Hardware and Software Capabilities
+
+**Important:** For comprehensive hardware specifications, system requirements, and deployment configurations, refer to the **[automation_nation.git](https://github.com/nullroute-commits/automation_nation.git)** project. This companion repository provides:
+
+- **Hardware Compatibility Matrices**: Validated hardware configurations for Proxmox deployments
+- **Performance Benchmarks**: Expected performance metrics for various hardware profiles
+- **Capacity Planning**: Tools to calculate resource requirements for your specific use case
+- **Node Configuration Templates**: Pre-validated hardware and software configurations
+- **Deployment Best Practices**: Production-tested deployment patterns and recommendations
 
 ## Prerequisites
 
-- Proxmox VE 9.0+ installed and accessible
-- Ansible 2.14+ installed
-- Internet connectivity
-- At least 8GB RAM available
-- At least 50GB disk space
+### Proxmox VE Requirements
+
+**Version Requirements:**
+- Proxmox VE 9.1+ (tested on 9.1.0)
+- Backward compatible with Proxmox VE 9.0.x
+- Kernel 6.14+ recommended
+
+**Installation State:**
+- Fresh Proxmox VE installation or existing cluster node
+- Accessible via SSH with root privileges
+- Internet connectivity established
+- Time synchronization configured (NTP)
+
+### Hardware Requirements
+
+Refer to [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) for detailed specifications. Minimum requirements:
+
+**Compute:**
+- CPU: Dual-core processor (quad-core recommended)
+- CPU Features: VT-x/AMD-V enabled for nested virtualization
+- Architecture: x86_64 (amd64)
+
+**Memory:**
+- Minimum: 8GB RAM (4GB for Proxmox + 8GB for containers)
+- Recommended: 16GB RAM for production workloads
+- Swap: At least 4GB swap space on Proxmox host
+
+**Storage:**
+- Minimum: 100GB available storage
+- Recommended: 200GB+ for production with backups
+- Filesystem: ZFS recommended, ext4 minimum
+- IOPS: SSD recommended for PostgreSQL performance
+
+**Network:**
+- Network interface(s) connected and configured
+- DHCP or static IP configuration
+- Internet access for package downloads
+- DNS resolution working
+
+### Network Requirements
+
+**Bridge Configuration:**
+- `vmbr0`: External/physical bridge (must exist or be created)
+- `vmbr1`: Backend network bridge (will be created)
+- `vmbr2`: DMZ network bridge (will be created)
+
+**Connectivity:**
+- Outbound HTTPS (443) for package repositories
+- Outbound HTTP (80) for Debian mirrors
+- DNS resolution to public servers
+- No incoming firewall restrictions required
+
+### Software Prerequisites
+
+**On Control Node (where Ansible runs):**
+- Ansible 2.14+ installed (2.17+ recommended)
+- Python 3.10+ 
+- SSH client configured
+- Git (for repository cloning)
+
+**On Proxmox Host:**
+- Proxmox VE 9.1+ installed
+- Standard Proxmox repositories enabled
+- Root SSH access configured
+- No conflicting container VMIDs (100-103)
+
+## Pre-Deployment Checklist
+
+Before starting deployment, verify:
+
+- [ ] Proxmox VE 9.1+ is installed and accessible
+- [ ] Root SSH access to Proxmox host is configured
+- [ ] Internet connectivity is available from Proxmox host
+- [ ] At least 8GB RAM is free (check with `free -h`)
+- [ ] At least 100GB storage is available (check with `df -h`)
+- [ ] No existing containers with VMIDs 100-103 (check with `pct list`)
+- [ ] No existing bridges vmbr1 or vmbr2 (check with `brctl show`)
+- [ ] Ansible 2.14+ is installed on control node
+- [ ] Hardware meets minimum requirements (see automation_nation.git)
+- [ ] Network configuration allows outbound connectivity
+
+## Prerequisites Validation
+
+Run these commands on the Proxmox host to validate prerequisites:
+
+```bash
+# Check Proxmox version
+pveversion
+
+# Check available resources
+free -h
+df -h /var/lib/vz
+
+# Check existing containers
+pct list
+
+# Check existing bridges
+brctl show
+
+# Check internet connectivity
+ping -c 2 debian.org
+
+# Check DNS resolution
+nslookup github.com
+```
+
+Expected results:
+- Proxmox VE 9.1 or later
+- At least 8GB free RAM
+- At least 100GB free in /var/lib/vz
+- No containers with VMIDs 100-103
+- Only vmbr0 exists (vmbr1, vmbr2 should not exist yet)
+- Successful ping to debian.org
+- Successful DNS resolution
+
+## Prerequisites
+
+- Proxmox VE 9.1+ installed and accessible
+- Ansible 2.14+ installed on control node
+- Internet connectivity from Proxmox host
+- At least 8GB RAM available (16GB recommended)
+- At least 50GB disk space (100GB recommended)
+- Hardware validated using automation_nation.git specifications
+
+### Ansible Control Node Requirements
+
+**Operating System:**
+- Linux (Ubuntu 22.04+, Debian 12+, RHEL 9+, etc.)
+- macOS 12+ (with Homebrew)
+- WSL2 on Windows (Ubuntu distribution)
+
+**Software:**
+- Python 3.10 or later (`python3 --version`)
+- pip (Python package manager)
+- Git (`git --version`)
+- SSH client with key-based authentication configured
+
+**Installation:**
+```bash
+# Ubuntu/Debian
+apt update && apt install -y python3 python3-pip git openssh-client
+
+# Install Ansible
+pip3 install ansible-core>=2.17.0
+
+# Verify installation
+ansible --version
+```
 
 ## Quick Start
 
@@ -21,6 +174,10 @@ Complete automated deployment of NetBox on Proxmox VE 9.0 from a clean environme
 git clone https://github.com/nullroute-commits/netbox-proxmox-ansible.git
 cd netbox-proxmox-ansible
 
+# Validate prerequisites on Proxmox host
+./scripts/validate-prerequisites.sh
+
+# If validation passes, continue with setup
 # Install Ansible collections
 ansible-galaxy collection install -r requirements.yml
 

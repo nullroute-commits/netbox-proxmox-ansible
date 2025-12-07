@@ -2,7 +2,8 @@
 # Software versions - pinned to stable releases as of December 2025
 
 # Proxmox Host
-proxmox_version: "9.0"
+proxmox_version: "9.1"
+proxmox_min_version: "9.0"
 
 # Container Template
 debian_template: "debian-13-standard_13.1-2_amd64.tar.zst"

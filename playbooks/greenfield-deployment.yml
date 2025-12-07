@@ -1,6 +1,7 @@
 ---
 # Complete greenfield NetBox deployment playbook
-# Deploys NetBox from scratch on Proxmox VE 9.0
+# Deploys NetBox from scratch on Proxmox VE 9.1+
+# Compatible with Proxmox VE 9.0.x and later
 
 - name: NetBox Greenfield Deployment
   hosts: localhost
@@ -18,7 +19,7 @@
       ansible.builtin.debug:
         msg:
           - "╔═══════════════════════════════════════════════════════════╗"
-          - "║  NetBox Greenfield Deployment on Proxmox VE 9.0          ║"
+          - "║  NetBox Greenfield Deployment on Proxmox VE 9.1+        ║"
           - "╚═══════════════════════════════════════════════════════════╝"
           - ""
           - "NetBox:     {{ netbox_version }}"
@@ -26,6 +27,7 @@
           - "Valkey:     {{ valkey_version }}"
           - "Python:     {{ python_full_version }}"
           - "Nginx:      {{ nginx_full_version }}"
+          - "Proxmox:    {{ proxmox_version }}+"
 
 # ==============================================================================
 # PHASE 1: Infrastructure Setup

@@ -6,9 +6,15 @@ This document lists all software versions used in this deployment, pinned to sta
 
 | Component | Version | Notes |
 |-----------|---------|-------|
-| Proxmox VE | 9.0.3 | Latest stable (9.0.0) |
-| Kernel | 6.14.8-2-pve | Proxmox kernel |
+| Proxmox VE | 9.1+ | Latest stable (9.1.x compatible) |
+| Kernel | 6.14.8-2-pve or later | Proxmox kernel |
 | Debian | 13.1 (Trixie) | Container OS |
+
+**Proxmox VE 9.1 Compatibility:**
+- Fully tested on Proxmox VE 9.1.0 and later
+- Backward compatible with Proxmox VE 9.0.x
+- Requires kernel 6.14+ for full feature support
+- LXC container support validated
 
 ## Core Services
 
