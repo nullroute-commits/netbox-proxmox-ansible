@@ -31,6 +31,28 @@ cd /root/netbox-proxmox-ansible
 
 See [docs/PREREQUISITES.md](docs/PREREQUISITES.md) for detailed requirements and troubleshooting.
 
+### System Capability Analysis (Recommended)
+
+Collect system information and generate optimized deployment configuration:
+
+```bash
+# 1. Collect system information with automation_nation
+git clone https://github.com/nullroute-commits/automation_nation.git
+cd automation_nation
+./collect_info.sh -o /path/to/netbox-proxmox-ansible/system_info.json
+
+# 2. Analyze system capabilities and generate configuration
+cd /path/to/netbox-proxmox-ansible
+ansible-playbook playbooks/analyze-system-capabilities.yml
+
+# This analyzes:
+# - Networking: Interfaces, suggested bridge configuration
+# - Hardware: CPU/memory/storage, optimized container allocations
+# - Software: OS, packages, virtualization compatibility
+```
+
+See [docs/SYSTEM_CAPABILITY_ANALYSIS.md](docs/SYSTEM_CAPABILITY_ANALYSIS.md) for detailed information.
+
 ### Deployment Steps
 
 ```bash
@@ -127,6 +149,7 @@ See [docs/PROXMOX_INTEGRATION.md](docs/PROXMOX_INTEGRATION.md) for Proxmox plugi
 
 Comprehensive documentation is available in the `docs/` directory:
 
+- **[SYSTEM_CAPABILITY_ANALYSIS.md](docs/SYSTEM_CAPABILITY_ANALYSIS.md)** - **NEW:** Automated system analysis using automation_nation for networking, hardware, and software resources
 - **[PREREQUISITES.md](docs/PREREQUISITES.md)** - Comprehensive prerequisites, hardware requirements, and validation
 - **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Detailed architecture, design decisions, and operational procedures
 - **[ANSIBLE_DESIGN.md](docs/ANSIBLE_DESIGN.md)** - Ansible project structure, roles, and automation design

@@ -4,6 +4,7 @@ Complete documentation for NetBox deployment on Proxmox VE 9.1+.
 
 ## Quick Links
 
+- **[SYSTEM_CAPABILITY_ANALYSIS.md](SYSTEM_CAPABILITY_ANALYSIS.md)** - **NEW:** Automated deployment configuration from automation_nation data
 - **[PREREQUISITES.md](PREREQUISITES.md)** - Start here! Comprehensive prerequisites and validation
 - **[GREENFIELD_DEPLOYMENT.md](GREENFIELD_DEPLOYMENT.md)** - Step-by-step deployment from scratch
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - System architecture and design decisions
@@ -15,13 +16,19 @@ Complete documentation for NetBox deployment on Proxmox VE 9.1+.
 
 ### Getting Started
 
-1. **[PREREQUISITES.md](PREREQUISITES.md)** - Read this first
+1. **[SYSTEM_CAPABILITY_ANALYSIS.md](SYSTEM_CAPABILITY_ANALYSIS.md)** - **NEW: Start here for automated configuration**
+   - Collect system information with automation_nation
+   - Analyze networking, hardware, and software resources
+   - Generate optimized deployment configuration
+   - Automatic resource allocation based on detected capabilities
+
+2. **[PREREQUISITES.md](PREREQUISITES.md)** - Manual prerequisites checklist
    - Hardware requirements (reference: [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git))
    - Software requirements
    - Network requirements
    - Prerequisites validation script
 
-2. **[GREENFIELD_DEPLOYMENT.md](GREENFIELD_DEPLOYMENT.md)** - Deployment guide
+3. **[GREENFIELD_DEPLOYMENT.md](GREENFIELD_DEPLOYMENT.md)** - Deployment guide
    - Quick start instructions
    - Detailed deployment phases
    - Troubleshooting common issues

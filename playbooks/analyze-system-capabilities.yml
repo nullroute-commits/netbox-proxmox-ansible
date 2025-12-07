@@ -1,0 +1,91 @@
+---
+# Analyze system capabilities using automation_nation data
+# This playbook parses the collected system information and generates
+# deployment configuration for networking, hardware, and software resources
+
+- name: Analyze System Capabilities for Deployment
+  hosts: localhost
+  gather_facts: false
+  
+  vars:
+    automation_nation_output: "{{ playbook_dir }}/../system_info.json"
+    generated_config_file: "{{ playbook_dir }}/../group_vars/all/generated_config.yml"
+  
+  tasks:
+    - name: Check if automation_nation output exists
+      ansible.builtin.stat:
+        path: "{{ automation_nation_output }}"
+      register: system_info_file
+    
+    - name: Fail if system information not collected
+      ansible.builtin.fail:
+        msg: |
+          System information not found at: {{ automation_nation_output }}
+          
+          Please collect system information first using automation_nation:
+            git clone https://github.com/nullroute-commits/automation_nation.git
+            cd automation_nation
+            ./collect_info.sh -o {{ automation_nation_output }}
+      when: not system_info_file.stat.exists
+    
+    - name: Display system information file location
+      ansible.builtin.debug:
+        msg: "Found system information at: {{ automation_nation_output }}"
+    
+    - name: Parse system information and generate deployment configuration
+      ansible.builtin.command:
+        cmd: "python3 {{ playbook_dir }}/../scripts/parse_system_info.py {{ automation_nation_output }} {{ generated_config_file }}"
+      register: parse_result
+      failed_when: parse_result.rc != 0
+    
+    - name: Display parser output
+      ansible.builtin.debug:
+        msg: "{{ parse_result.stderr_lines }}"
+    
+    - name: Load generated configuration
+      ansible.builtin.include_vars:
+        file: "{{ generated_config_file }}"
+        name: generated_config
+    
+    - name: Display deployment configuration summary
+      ansible.builtin.debug:
+        msg:
+          - "╔═══════════════════════════════════════════════════════════╗"
+          - "║       Deployment Configuration from System Analysis       ║"
+          - "╚═══════════════════════════════════════════════════════════╝"
+          - ""
+          - "System Capabilities:"
+          - "  CPU Cores: {{ generated_config.system_capabilities.total_cpu_cores }}"
+          - "  Memory: {{ generated_config.system_capabilities.total_memory_gb }}GB"
+          - "  Storage: {{ generated_config.system_capabilities.total_storage_gb }}GB"
+          - "  Architecture: {{ generated_config.system_capabilities.architecture }}"
+          - ""
+          - "Network Configuration:"
+          - "  Primary Interface: {{ generated_config.network_interfaces.primary }}"
+          - "  Detected Interfaces: {{ generated_config.network_interfaces.detected | join(', ') }}"
+          - ""
+          - "Container Resource Allocations:"
+          - "  NetBox:     {{ generated_config.containers.netbox.cores }} CPU, {{ generated_config.containers.netbox.memory }}MB RAM"
+          - "  Database:   {{ generated_config.containers.database.cores }} CPU, {{ generated_config.containers.database.memory }}MB RAM"
+          - "  Cache:      {{ generated_config.containers.cache.cores }} CPU, {{ generated_config.containers.cache.memory }}MB RAM"
+          - "  Proxy:      {{ generated_config.containers.proxy.cores }} CPU, {{ generated_config.containers.proxy.memory }}MB RAM"
+          - ""
+          - "Configuration file: {{ generated_config_file }}"
+          - ""
+          - "╚═══════════════════════════════════════════════════════════╝"
+    
+    - name: Create backup of original container configuration
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../group_vars/all/containers.yml"
+        dest: "{{ playbook_dir }}/../group_vars/all/containers.yml.backup"
+        backup: yes
+      when: generated_config is defined
+    
+    - name: Provide next steps
+      ansible.builtin.debug:
+        msg:
+          - ""
+          - "Next Steps:"
+          - "  1. Review the generated configuration: {{ generated_config_file }}"
+          - "  2. Optionally merge with existing configuration"
+          - "  3. Run deployment: ansible-playbook playbooks/greenfield-deployment.yml"

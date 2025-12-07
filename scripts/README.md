@@ -32,6 +32,50 @@ This directory contains utility scripts for NetBox deployment on Proxmox VE 9.1+
 - `1`: Some warnings present, may be deployable
 - `2`: Critical failures, must be resolved before deployment
 
+### parse_system_info.py
+
+**Purpose:** Parses automation_nation system information and generates deployment configuration optimized for detected hardware, networking, and software resources.
+
+**Usage:**
+```bash
+# Generate deployment configuration
+python3 scripts/parse_system_info.py system_info.json generated_config.yml
+
+# Or just analyze and display JSON
+python3 scripts/parse_system_info.py system_info.json
+```
+
+**What it analyzes:**
+- **Hardware Resources:** CPU cores, memory, storage, allocates container resources
+- **Networking:** Detects interfaces, suggests bridge configuration
+- **Software Resources:** OS version, packages, virtualization type
+
+**Output:** Ansible variables file with optimized container allocations based on system capabilities.
+
+**Resource Scaling:**
+- 8GB RAM: Minimum allocations (4GB/2GB/1GB/512MB for NetBox/DB/Cache/Proxy)
+- 16GB RAM: Increased allocations (6GB/4GB/2GB/1GB)
+- 32GB+ RAM: Maximum allocations (8GB/8GB/4GB/2GB)
+
+**Example Output:**
+```
+Analyzing system information from automation_nation...
+Warnings:
+  - Limited memory: 8GB available, 16GB recommended for production
+
+✓ Deployment configuration written to: generated_config.yml
+
+  Container allocations:
+    - netbox: 2 CPU, 4096MB RAM, 32GB disk
+    - database: 2 CPU, 2048MB RAM, 16GB disk
+    - cache: 1 CPU, 1024MB RAM, 8GB disk
+    - proxy: 1 CPU, 512MB RAM, 8GB disk
+```
+
+**Dependencies:** Python 3.10+, PyYAML (`pip3 install pyyaml`)
+
+**Documentation:** See [docs/SYSTEM_CAPABILITY_ANALYSIS.md](../docs/SYSTEM_CAPABILITY_ANALYSIS.md)
+
 **Example Output:**
 ```
 ════════════════════════════════════════════════════════════
