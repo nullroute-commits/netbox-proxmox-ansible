@@ -133,16 +133,22 @@ Comprehensive documentation is available in the `docs/` directory:
 - **[COMMAND_REFERENCE.md](docs/COMMAND_REFERENCE.md)** - Complete command reference for all components
 - **[GREENFIELD_DEPLOYMENT.md](docs/GREENFIELD_DEPLOYMENT.md)** - Step-by-step greenfield deployment guide
 
-**Hardware Specifications:** Refer to [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) for validated hardware configurations and capacity planning.
+**Hardware Specifications:** Use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) bash script to collect comprehensive hardware and software information from your Proxmox node before deployment.
 
 ## Prerequisites
 
 ### Hardware Requirements
 
-**Note:** For detailed hardware specifications and capabilities, refer to the [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) project which provides:
-- Hardware compatibility matrices
-- System requirement calculators
-- Performance benchmarking data
+**Collect Node Capabilities:** Use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) to collect your Proxmox node's hardware and software information:
+
+```bash
+# On Proxmox host
+git clone https://github.com/nullroute-commits/automation_nation.git
+cd automation_nation
+./collect_info.sh -o proxmox_node_info.json
+```
+
+This provides comprehensive system information including CPU, memory, storage, network, and installed software.
 - Node deployment configurations
 
 **Minimum Requirements:**

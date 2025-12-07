@@ -4,7 +4,7 @@
 
 This document describes the architecture, design decisions, and implementation details for deploying NetBox in a multi-container LXC environment on Proxmox VE 9.1+.
 
-**Hardware Specifications:** For detailed hardware requirements and validated configurations, see [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git).
+**System Information Collection:** Use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) bash script to collect comprehensive hardware and software information from your Proxmox node before deployment.
 
 ## Architecture Diagram
 

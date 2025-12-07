@@ -6,13 +6,24 @@ Complete automated deployment of NetBox on Proxmox VE 9.1 from a clean environme
 
 ## Hardware and Software Capabilities
 
-**Important:** For comprehensive hardware specifications, system requirements, and deployment configurations, refer to the **[automation_nation.git](https://github.com/nullroute-commits/automation_nation.git)** project. This companion repository provides:
+**Important:** Before deploying, use the **[automation_nation.git](https://github.com/nullroute-commits/automation_nation.git)** bash script to collect comprehensive hardware and software information from your Proxmox node:
 
-- **Hardware Compatibility Matrices**: Validated hardware configurations for Proxmox deployments
-- **Performance Benchmarks**: Expected performance metrics for various hardware profiles
-- **Capacity Planning**: Tools to calculate resource requirements for your specific use case
-- **Node Configuration Templates**: Pre-validated hardware and software configurations
-- **Deployment Best Practices**: Production-tested deployment patterns and recommendations
+```bash
+# On the Proxmox host, collect system information
+git clone https://github.com/nullroute-commits/automation_nation.git
+cd automation_nation
+./collect_info.sh -o proxmox_node_info.json
+
+# Review the collected information to verify:
+# - CPU architecture and capabilities
+# - Available memory and swap
+# - Storage devices and capacity
+# - Network interfaces
+# - Virtualization support
+# - Installed packages and software versions
+```
+
+This information helps validate that your node meets the deployment prerequisites and provides baseline system capabilities.
 
 ## Prerequisites
 
@@ -31,7 +42,26 @@ Complete automated deployment of NetBox on Proxmox VE 9.1 from a clean environme
 
 ### Hardware Requirements
 
-Refer to [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) for detailed specifications. Minimum requirements:
+**Collect System Information First:**
+
+Before deployment, use [automation_nation.git](https://github.com/nullroute-commits/automation_nation.git) to collect your Proxmox node's hardware and software capabilities:
+
+```bash
+# On Proxmox host
+git clone https://github.com/nullroute-commits/automation_nation.git
+cd automation_nation
+./collect_info.sh -o proxmox_node_capabilities.json
+```
+
+This bash script collects comprehensive system information including:
+- CPU architecture and virtualization support
+- Memory and swap configuration
+- Storage devices and filesystems
+- Network interfaces and configuration
+- Installed packages and versions
+- Kernel and OS details
+
+**Minimum Hardware Requirements:**
 
 **Compute:**
 - CPU: Dual-core processor (quad-core recommended)

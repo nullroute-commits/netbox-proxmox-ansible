@@ -15,13 +15,26 @@ This document provides comprehensive prerequisites for deploying NetBox on Proxm
 
 ### Reference Hardware Specifications
 
-For detailed hardware specifications, compatibility matrices, and validated configurations, refer to the **[automation_nation.git](https://github.com/nullroute-commits/automation_nation.git)** project. This companion repository provides:
+Before deployment, use the **[automation_nation.git](https://github.com/nullroute-commits/automation_nation.git)** bash script to collect comprehensive hardware and software information from your Proxmox node:
 
-- Validated hardware configuration templates
-- Performance benchmarks for various hardware profiles
-- Capacity planning calculators
-- Hardware compatibility matrices for Proxmox VE 9.1
-- Production deployment recommendations
+```bash
+# On Proxmox host
+git clone https://github.com/nullroute-commits/automation_nation.git
+cd automation_nation
+
+# Collect comprehensive system information
+./collect_info.sh -o proxmox_node_capabilities.json
+
+# Review the JSON output for:
+# - CPU architecture and virtualization support
+# - Memory and swap configuration  
+# - Storage devices and capacity
+# - Network interfaces
+# - Installed packages and versions
+# - Kernel and OS information
+```
+
+This JSON output provides a complete inventory of your node's capabilities, helping validate prerequisites before deployment.
 
 ### Minimum Hardware Requirements
 
@@ -522,10 +535,10 @@ All checks should show ✓ (pass) or ⚠ (warning). Any ✗ (fail) must be resol
 If prerequisites validation fails:
 
 1. Review the specific error messages
-2. Consult the automation_nation.git repository for hardware guidance
+2. Use automation_nation.git to collect detailed system information
 3. Check Proxmox VE documentation for host configuration
 4. Verify network connectivity and DNS resolution
-5. Create an issue in the repository with validation output
+5. Create an issue in the repository with validation output and system info
 
 ---
 
