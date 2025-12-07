@@ -6,47 +6,48 @@
 - name: Analyze System Capabilities for Deployment
   hosts: localhost
   gather_facts: false
-  
+
   vars:
     automation_nation_output: "{{ playbook_dir }}/../system_info.json"
     generated_config_file: "{{ playbook_dir }}/../group_vars/all/generated_config.yml"
-  
+
   tasks:
     - name: Check if automation_nation output exists
       ansible.builtin.stat:
         path: "{{ automation_nation_output }}"
       register: system_info_file
-    
+
     - name: Fail if system information not collected
       ansible.builtin.fail:
         msg: |
           System information not found at: {{ automation_nation_output }}
-          
+
           Please collect system information first using automation_nation:
             git clone https://github.com/nullroute-commits/automation_nation.git
             cd automation_nation
             ./collect_info.sh -o {{ automation_nation_output }}
       when: not system_info_file.stat.exists
-    
+
     - name: Display system information file location
       ansible.builtin.debug:
         msg: "Found system information at: {{ automation_nation_output }}"
-    
+
     - name: Parse system information and generate deployment configuration
       ansible.builtin.command:
         cmd: "python3 {{ playbook_dir }}/../scripts/parse_system_info.py {{ automation_nation_output }} {{ generated_config_file }}"
       register: parse_result
       failed_when: parse_result.rc != 0
-    
+      changed_when: parse_result.rc == 0
+
     - name: Display parser output
       ansible.builtin.debug:
         msg: "{{ parse_result.stderr_lines }}"
-    
+
     - name: Load generated configuration
       ansible.builtin.include_vars:
         file: "{{ generated_config_file }}"
         name: generated_config
-    
+
     - name: Display deployment configuration summary
       ansible.builtin.debug:
         msg:
@@ -73,21 +74,22 @@
           - "Configuration file: {{ generated_config_file }}"
           - ""
           - "╚═══════════════════════════════════════════════════════════╝"
-    
+
     - name: Check if original container configuration exists
       ansible.builtin.stat:
         path: "{{ playbook_dir }}/../group_vars/all/containers.yml"
       register: containers_yml_file
-    
+
     - name: Create backup of original container configuration
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../group_vars/all/containers.yml"
         dest: "{{ playbook_dir }}/../group_vars/all/containers.yml.backup"
-        backup: yes
+        mode: '0644'
+        backup: true
       when:
         - generated_config is defined
         - containers_yml_file.stat.exists
-    
+
     - name: Provide next steps
       ansible.builtin.debug:
         msg:

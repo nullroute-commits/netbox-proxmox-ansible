@@ -47,3 +47,5 @@ htmlcov/
 
 # OS
 Thumbs.db
+# Temporary files from pip installations
+=*
