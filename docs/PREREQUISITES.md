@@ -257,12 +257,14 @@ apt upgrade -y
 
 ### SSH Access Configuration
 
-**Root SSH Access:**
+**Root SSH Access (Key-based only, recommended):**
 ```bash
-# Enable root SSH (if not already enabled)
-# Edit /etc/ssh/sshd_config
-PermitRootLogin yes
-# Or use key-based authentication (recommended)
+# Edit /etc/ssh/sshd_config to allow root login only with SSH keys
+# This disables password authentication for root while allowing key-based access
+PermitRootLogin prohibit-password
+
+# For even better security, disable root SSH entirely and use a sudo-enabled user:
+# PermitRootLogin no
 
 # Restart SSH
 systemctl restart sshd

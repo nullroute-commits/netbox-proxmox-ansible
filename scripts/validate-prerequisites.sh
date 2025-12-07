@@ -3,8 +3,6 @@
 # Run on Proxmox VE 9.1+ host as root
 # Purpose: Validate system meets requirements before deployment
 
-set -e
-
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'

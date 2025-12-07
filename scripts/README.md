@@ -76,6 +76,8 @@ Warnings:
 
 **Documentation:** See [docs/SYSTEM_CAPABILITY_ANALYSIS.md](../docs/SYSTEM_CAPABILITY_ANALYSIS.md)
 
+## validate-prerequisites.sh Example Output
+
 **Example Output:**
 ```
 ════════════════════════════════════════════════════════════

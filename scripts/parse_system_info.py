@@ -8,8 +8,7 @@ for networking, hardware resources, and software resources.
 import json
 import sys
 import yaml
-from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
 class DeploymentConfigurator:
     """Analyzes automation_nation output and generates deployment configuration."""
@@ -33,21 +32,48 @@ class DeploymentConfigurator:
         hw_data = self.system_info.get('get_hardware_info', {}).get('data', {})
         
         # Extract CPU information
-        cpu_cores = int(hw_data.get('cpu_cores', 0))
+        try:
+            cpu_cores = int(hw_data.get('cpu_cores', 0))
+        except (ValueError, TypeError):
+            cpu_cores = 0
+            self.config['warnings'].append("Could not parse CPU cores information")
+        
         cpu_model = hw_data.get('cpu_model', 'Unknown')
         
         # Extract memory information (convert from MB to GB)
-        memory_total_mb = int(hw_data.get('memory_total', '0').replace(' MB', ''))
-        memory_total_gb = memory_total_mb // 1024
-        memory_available_mb = int(hw_data.get('memory_available', '0').replace(' MB', ''))
+        try:
+            memory_total_str = hw_data.get('memory_total', '0 MB')
+            memory_total_mb = int(memory_total_str.replace(' MB', '').strip())
+            memory_total_gb = memory_total_mb // 1024
+        except (ValueError, TypeError, AttributeError):
+            memory_total_mb = 0
+            memory_total_gb = 0
+            self.config['errors'].append("Could not parse memory information")
+        
+        try:
+            memory_available_str = hw_data.get('memory_available', '0 MB')
+            memory_available_mb = int(memory_available_str.replace(' MB', '').strip())
+        except (ValueError, TypeError, AttributeError):
+            memory_available_mb = 0
+            self.config['warnings'].append("Could not parse available memory information")
         
         # Extract disk information
         disk_info = hw_data.get('disk_info', [])
-        root_disk = next((d for d in disk_info if d['mountpoint'] == '/'), {})
+        root_disk = next((d for d in disk_info if d.get('mountpoint') == '/'), {})
         disk_available_gb = 0
         if root_disk:
-            available = root_disk.get('available', '0G')
-            disk_available_gb = int(available.replace('G', '')) if 'G' in available else 0
+            try:
+                available = root_disk.get('available', '0G')
+                # Handle different formats: "150G", "1.5T", "1500M"
+                if 'T' in available:
+                    disk_available_gb = int(float(available.replace('T', '').strip()) * 1024)
+                elif 'G' in available:
+                    disk_available_gb = int(available.replace('G', '').strip())
+                elif 'M' in available:
+                    disk_available_gb = int(float(available.replace('M', '').strip()) / 1024)
+            except (ValueError, TypeError, AttributeError):
+                disk_available_gb = 0
+                self.config['warnings'].append("Could not parse disk size information")
         
         hardware_config = {
             'cpu': {
@@ -145,7 +171,7 @@ class DeploymentConfigurator:
             allocations['proxy']['memory'] = 2048
         
         if total_cores >= 4:
-            allocations['netbox']['cpu'] = min(4, total_cores - 4)
+            allocations['netbox']['cpu'] = min(4, max(2, total_cores - 2))
             allocations['database']['cpu'] = 2
         
         if total_cores >= 8:
@@ -153,6 +179,19 @@ class DeploymentConfigurator:
             allocations['database']['cpu'] = 4
             allocations['cache']['cpu'] = 2
             allocations['proxy']['cpu'] = 2
+        
+        # Validate that total allocated memory does not exceed available memory
+        total_allocated_memory = sum(container['memory'] for container in allocations.values())
+        if total_allocated_memory > available_memory_mb:
+            error_msg = (
+                f"Total allocated container memory ({total_allocated_memory} MB) exceeds available memory "
+                f"({available_memory_mb} MB). Container allocations have been adjusted."
+            )
+            self.config['warnings'].append(error_msg)
+            # Scale down proportionally if needed
+            scale_factor = available_memory_mb / total_allocated_memory * 0.9  # Use 90% to leave some headroom
+            for container_name in allocations:
+                allocations[container_name]['memory'] = int(allocations[container_name]['memory'] * scale_factor)
         
         return allocations
     
@@ -174,11 +213,11 @@ class DeploymentConfigurator:
         # Suggest network configuration
         network_config = {
             'detected_interfaces': interfaces,
-            'primary_interface': interfaces[0]['name'] if interfaces else 'eth0',
+            'primary_interface': interfaces[0]['name'] if len(interfaces) > 0 else 'eth0',
             'suggested_bridges': {
                 'vmbr0': {
                     'comment': 'External network (physical bridge)',
-                    'ports': interfaces[0]['name'] if interfaces else 'eth0',
+                    'ports': interfaces[0]['name'] if len(interfaces) > 0 else 'eth0',
                     'bridge_fd': 0
                 },
                 'vmbr1': {
@@ -300,10 +339,6 @@ class DeploymentConfigurator:
         
         # Generate Ansible variables
         ansible_vars = {
-            '# Generated from automation_nation system information': None,
-            '# Timestamp': config['collection_metadata'].get('timestamp'),
-            '# Architecture': sw['operating_system']['architecture'],
-            
             'proxmox_storage': 'local-zfs',
             
             'containers': {
@@ -380,8 +415,14 @@ def main():
             if ansible_vars is None:
                 sys.exit(1)
             
-            # Write to YAML file
+            # Write to YAML file with comments
             with open(output_file, 'w') as f:
+                # Write header comments
+                f.write("---\n")
+                f.write("# Generated from automation_nation system information\n")
+                f.write(f"# Timestamp: {config['collection_metadata'].get('timestamp', 'N/A')}\n")
+                f.write(f"# Architecture: {sw['operating_system'].get('architecture', 'N/A')}\n")
+                f.write("\n")
                 yaml.dump(ansible_vars, f, default_flow_style=False, sort_keys=False)
             
             print(f"\n✓ Deployment configuration written to: {output_file}", file=sys.stderr)

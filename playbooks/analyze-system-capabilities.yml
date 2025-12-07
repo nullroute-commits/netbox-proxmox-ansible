@@ -74,12 +74,19 @@
           - ""
           - "╚═══════════════════════════════════════════════════════════╝"
     
+    - name: Check if original container configuration exists
+      ansible.builtin.stat:
+        path: "{{ playbook_dir }}/../group_vars/all/containers.yml"
+      register: containers_yml_file
+    
     - name: Create backup of original container configuration
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../group_vars/all/containers.yml"
         dest: "{{ playbook_dir }}/../group_vars/all/containers.yml.backup"
         backup: yes
-      when: generated_config is defined
+      when:
+        - generated_config is defined
+        - containers_yml_file.stat.exists
     
     - name: Provide next steps
       ansible.builtin.debug:
