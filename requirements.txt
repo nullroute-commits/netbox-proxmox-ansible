@@ -1,0 +1,5 @@
+# Python dependencies for netbox-proxmox-ansible scripts
+# Install with: pip3 install -r requirements.txt
+
+# Required for parse_system_info.py
+pyyaml>=6.0
