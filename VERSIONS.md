@@ -149,15 +149,15 @@ All plugins pinned to latest stable versions as of December 2025:
 collections:
   # General purpose modules and plugins
   - name: community.general
-    version: "==12.1.0"
+    version: "12.1.0"
 
   # POSIX system modules (sysctl, authorized_key, etc.)
   - name: ansible.posix
-    version: "==2.1.0"
+    version: "2.1.0"
 
   # Proxmox VE management modules (replaces deprecated community.general.proxmox)
   - name: community.proxmox
-    version: "==1.4.0"
+    version: "1.4.0"
 ```
 
 ### In group_vars/all/versions.yml
