@@ -143,9 +143,9 @@ Python: ">=3.10"
 
 **Required Ansible Collections:**
 ```yaml
-community.general: "==12.1.0"
-ansible.posix: "==2.1.0"
-community.proxmox: "==1.4.0"
+community.general: "12.1.0"
+ansible.posix: "2.1.0"
+community.proxmox: "1.4.0"
 ```
 
 ### Container Guest OS

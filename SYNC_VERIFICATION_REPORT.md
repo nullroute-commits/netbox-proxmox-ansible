@@ -31,11 +31,11 @@ All sprint plan requirements have been verified as implemented in the codebase, 
 # requirements.yml
 collections:
   - name: community.general
-    version: "==12.1.0"
+    version: "12.1.0"
   - name: ansible.posix
-    version: "==2.1.0"
+    version: "2.1.0"
   - name: community.proxmox
-    version: "==1.4.0"
+    version: "1.4.0"
 ```
 
 **Status:** ✅ All dependencies correctly pinned

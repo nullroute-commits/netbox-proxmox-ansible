@@ -59,11 +59,11 @@ This sprint plan outlines the work required to update the `netbox-proxmox-ansibl
 ---
 collections:
   - name: community.general
-    version: "==12.1.0"
+    version: "12.1.0"
   - name: ansible.posix
-    version: "==2.1.0"
+    version: "2.1.0"
   - name: community.proxmox
-    version: "==1.4.0"
+    version: "1.4.0"
 ```
 
 #### Story 1.2: Update versions.yml
